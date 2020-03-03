@@ -1,6 +1,6 @@
 # Data analysis for paper 2 of La Gamba moth project
 # Evaluate effects of vegetation parameters on 
-# moth species in 4 land use types in La Gamba CR
+# moth diversity in 4 land use types in La Gamba CR
 
 # AAR
 
@@ -85,25 +85,103 @@ library(corrplot)
 var_cor=subset(data_all, select = c("SpRichness","VegDensity","VegDiversity",
                              "UnderDensity","UnderComplex","UnderCover",
                              "VerticalComplex","CanopyCover",
-                             "BasalArea","Elevation","Slope","Moonlight",
-                             "NMDS1","NMDS2"))
+                             "BasalArea","NMDS1","NMDS2"))
 var_cor <- as.matrix(var_cor)
 c <- corrplot(cor(var_cor,use="pairwise.complete.obs", method = "spearman"), 
          is.corr = TRUE, method = "number", tl.cex=1, 
          type = "upper", order = "hclust")
 
-res1 <- cor.mtest(var_cor, conf.level = 0.95)
-corrplot(cor(var_cor,use="pairwise.complete.obs", method = "spearman"),
-         method = "square", type = "upper", order = "hclust",
-         p.mat = res1$p, sig.level = 0.05)
+# res1 <- cor.mtest(var_cor, conf.level = 0.95)
+# corrplot(cor(var_cor,use="pairwise.complete.obs", method = "spearman"),
+#         method = "square", type = "upper", order = "hclust",
+#         p.mat = res1$p, sig.level = 0.05)
 
-# More than 0.6 correlation coefficient
-# Basal area & NMDS1
+# More than 0.6 correlation coefficient is bad
 
 str(c)
 head(c)
 correlations <- as.data.frame(c)
 
+# testing correlations between floristic and structural variables separately
 
+# floristic
+
+var_cor_flor=subset(data_all, select = c("SpRichness","VegDensity","VegDiversity",
+                                    "UnderDensity","NMDS1","NMDS2"))
+var_cor_flor <- as.matrix(var_cor_flor)
+c_flor <- corrplot(cor(var_cor_flor,use="pairwise.complete.obs", method = "spearman"), 
+              is.corr = TRUE, method = "number", tl.cex=1, 
+              type = "upper", order = "hclust")
+
+# structural
+
+var_cor_struc=subset(data_all, select = c("UnderComplex","UnderCover",
+                                    "VerticalComplex","CanopyCover",
+                                    "BasalArea"))
+var_cor_struc <- as.matrix(var_cor_struc)
+corrplot(cor(var_cor_struc,use="pairwise.complete.obs", method = "spearman"), 
+              is.corr = TRUE, method = "number", tl.cex=1, 
+              type = "upper", order = "hclust")
+
+
+
+# NEXT STEPS -----------------------------
+
+# do model with all variables, just to try it even though its not the way to go
+# do floristic model and stuctural model separately with all variables, just to try it as well
+# do floristic model and structural model separately with pre-selected variables
+# perform model selection glmulti for all of these
+# determine best final model for arctiines and geometrids
+
+# Geometridae - gamma, use glmer
+# Arctiinae - normal, use lmer
+
+# QUESTION: ADD SITE AS RANDOM EFFECT???
+
+# Model with all variables that are not correlated ------------------------
+
+# According to the correlation plot that includes all variables, there were 5 
+# variables that were selected as not being correlated:
+# Vegetation Diversity, Understory Complexity, Canopy Cover, NMDS 1 and NMDS 2
+
+#install.packages("lme4")
+library(lme4)
+#install.packages("lmerTest")
+library(lmerTest)
+#install.packages("glmulti")
+library(glmulti)
+
+
+# Functions
+lmer.glmulti=function(formula, data, random = "",...) { ### glmulti
+  lmer(paste(deparse(formula), random),data=data,...)
+}
+
+glmer.glmulti=function(formula, data, random = "",...) {
+  glmer(paste(deparse(formula), random),data=data, REML=F,...)
+}
+
+# GEOMETRIDAE
+
+Geom_all <- glmulti(G_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
+                  level=1, fitfunc=glmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                  data=data_all, method ="h")
+plot(Geom_all, type="s")
+
+Geom_final <- glmer(G_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(Geom_final)
+
+# ARCTIINAE
+
+Arc_all <- glmulti(A_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                   data=data_all, method ="h")
+plot(Arc_all, type="s")
+
+Arc_final <- lmer(A_fisher ~1+UnderComplex+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+                    data = data_all); summary(Arc_final)
+
+
+# Floristic model ---------------------------------------------------------
 
 
