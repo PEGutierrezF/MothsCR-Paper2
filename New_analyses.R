@@ -136,7 +136,13 @@ corrplot(cor(var_cor_struc,use="pairwise.complete.obs", method = "spearman"),
 # Geometridae - gamma, use glmer
 # Arctiinae - normal, use lmer
 
-# QUESTION: ADD SITE AS RANDOM EFFECT???
+# QUESTIONS: 
+# ADD SITE AS RANDOM EFFECT???
+# HOW TO CONDUCT A SPATIAL AUTOCORRELATION TEST WITH LAT LONG OF SITES?
+# OKAY TO REMOVE BASAL AREA FROM ANALYSES?
+# HOW TO CHECK FOR MODEL VALIDATION
+
+
 
 # Model with all variables that are not correlated ------------------------
 
@@ -165,7 +171,10 @@ glmer.glmulti=function(formula, data, random = "",...) {
 
 Geom_all <- glmulti(G_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
                   level=1, fitfunc=glmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                  data=data_all, method ="h")
+                  data=data_all, method ="h", crit = "aicc")
+print(Geom_all)
+AIC <- weightable(Geom_all)
+AIC[1:7,]
 plot(Geom_all, type="s")
 
 Geom_final <- glmer(G_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
@@ -175,13 +184,89 @@ Geom_final <- glmer(G_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
 
 Arc_all <- glmulti(A_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                   data=data_all, method ="h")
+                   data=data_all, method = "h", crit = "aicc")
+print(Arc_all)
+AIC <- weightable(Arc_all)
+AIC[1:2,]
 plot(Arc_all, type="s")
+
 
 Arc_final <- lmer(A_fisher ~1+UnderComplex+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
                     data = data_all); summary(Arc_final)
 
 
+
 # Floristic model ---------------------------------------------------------
+
+# According to the correlation plot that includes floristic variables, there were 3
+# variables that were selected as not being correlated:
+# Vegetation Diversity, NMDS 1 and NMDS 2
+
+# GEOMETRIDAE
+
+Geom_flor <- glmulti(G_fisher ~ VegDiversity+NMDS1+NMDS2,
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                    data=data_all, method ="h", crit = "aicc")
+# ERROR: function above does not work with glmer.glmulti. WHY?
+
+print(Geom_flor)
+AIC <- weightable(Geom_flor)
+AIC[1:7,]
+plot(Geom_flor, type="s")
+
+Geom_flor_final <- glmer(G_fisher ~1+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+                    data = data_all, family=Gamma(link = log)); summary(Geom_flor_final)
+
+# ARCTIINAE
+
+Arc_flor <- glmulti(A_fisher ~ VegDiversity+NMDS1+NMDS2,
+                   level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                   data=data_all, method = "h", crit = "aicc")
+print(Arc_flor)
+AIC <- weightable(Arc_flor)
+AIC[1:2,]
+plot(Arc_flor, type="s")
+
+
+Arc_flor_final <- lmer(A_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
+                  data = data_all); summary(Arc_flor_final)
+
+
+# Structural Model --------------------------------------------------------
+
+# According to the correlation plot that includes structural variables, there were 4
+# variables that were selected as not being correlated:
+# Understory complexity, vertical complexity, canopy cover and basal area
+# Decided to remove basal area from model, because it is severely high in oil palm
+
+# GEOMETRIDAE
+
+Geom_str <- glmulti(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex,
+                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                     data=data_all, method ="h", crit = "aicc")
+# ERROR: function above does not work with glmer.glmulti. WHY?
+
+print(Geom_str)
+AIC <- weightable(Geom_str)
+AIC[1:7,]
+plot(Geom_str, type="s")
+
+Geom_str_final <- glmer(G_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(1|Habitat),
+                         data = data_all, family=Gamma(link = log)); summary(Geom_str_final)
+
+# ARCTIINAE
+
+Arc_str <- glmulti(A_fisher ~ UnderComplex + CanopyCover + VerticalComplex,
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                    data=data_all, method = "h", crit = "aicc")
+print(Arc_str)
+AIC <- weightable(Arc_str)
+AIC[1:3,]
+plot(Arc_str, type="s")
+
+
+Arc_str_final <- lmer(A_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(1|Habitat),
+                       data = data_all); summary(Arc_str_final)
+
 
 
