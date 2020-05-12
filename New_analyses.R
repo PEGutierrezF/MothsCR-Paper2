@@ -28,10 +28,13 @@ habitat <- read.csv("Habitat.csv")
 #install.packages("MASS")
 library(MASS)
 
+set.seed(15)
 PlantsOrd <- metaMDS(plants,distance = "bray", k = 3,trymax=100)
+summary(PlantsOrd)
 #Extract NMDS axis scores
 nms_axis <- scores(PlantsOrd, choices=c(1,2))
 nms_axis <- as.data.frame(nms_axis)
+# write.csv(nms_axis,"C:\\Users\\aalonsor\\OneDrive - University of Vermont\\Documents\\UVM\\Classes\\Spring 2020\\Computational Biology\\AlonsoRodzBio381\\nms_axis.csv", row.names = TRUE)
 
 
 # Creating data frame with all variables ----------------------------------
@@ -78,6 +81,11 @@ shapiro.test(data_all$NMDS2) # normal
 
 shapiro.test(data_all$G_fisher) # not normal
 shapiro.test(data_all$A_fisher) # normal
+
+# transform G_fisher
+data_all$logGfisher <- log(data_all$G_fisher)
+shapiro.test(data_all$logGfisher)
+descdist(data_all$logGfisher, discrete=FALSE, boot=500) 
 
 # Checking for collinearity of variables ----------------------------------
 
@@ -168,6 +176,10 @@ glmer.glmulti=function(formula, data, random = "",...) {
 }
 
 # GEOMETRIDAE
+
+Geom_all <- glmulti(G_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
+                    level=1, fitfunc=glmer.glmulti, random=c("+(1|Moonlight)"), 
+                    data=data_all, method ="h", crit = "aicc")
 
 Geom_all <- glmulti(G_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
                   level=1, fitfunc=glmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
@@ -268,5 +280,80 @@ plot(Arc_str, type="s")
 Arc_str_final <- lmer(A_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(1|Habitat),
                        data = data_all); summary(Arc_str_final)
 
+#------------------------------------------------------------------------------------------
+#NOTES
+
+# tab_model de paquete sjplots para poner todos los modelos individuales
+# en una misma tabla con sus aicc
+
+# nested vs crossed random effects -- habitat/site o site/habitat... como ponerlos
+# ben bolker - buscar su pagina
 
 
+#------------------------------------------------------------------------------------------
+# Running models individually, without glmulti --------------------------------------------
+
+
+# Floristic model
+
+# GEOMETRIDAE
+
+g.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(g.null)
+
+g1 <- glmer(G_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(g1)
+
+g2 <- glmer(G_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(g2)
+
+g3 <- glmer(G_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(g3)
+
+g4 <- glmer(G_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(g4)
+
+g5 <- glmer(G_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(g5)
+
+g6 <- glmer(G_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(g6)
+
+g7 <- glmer(G_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(g7)
+
+
+# install.packages("sjPlot")
+library(sjPlot)
+
+tab_model(g.null,g1,g2,g3,g4,g5,g6,g7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+
+# ARCTIINAE
+
+
+a.null <- lmer(A_fisher ~ 1+(1|Moonlight)+(1|Habitat),
+                data = data_all); summary(a.null)
+
+a1 <- lmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(a1)
+
+a2 <- lmer(A_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(a2)
+
+a3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(a3)
+
+a4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(a4)
+
+a5 <- lmer(A_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(a5)
+
+a6 <- lmer(A_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(a6)
+
+a7 <- lmer(A_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(a7)
+
+tab_model(a.null,a1,a2,a3,a4,a5,a6,a7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
