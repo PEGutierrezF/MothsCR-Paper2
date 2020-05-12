@@ -292,6 +292,13 @@ Arc_str_final <- lmer(A_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(
 #------------------------------------------------------------------------------------------
 # Running models individually, without glmulti --------------------------------------------
 
+plot(G_fisher~Moonlight, data = data_all)
+scatter.smooth(x=data_all$Moonlight, y=data_all$G_fisher)
+
+plot(G_fisher~Habitat, data = data_all)
+
+plot(G_fisher~Code, data = data_all)
+
 
 # Floristic model ------------------------------------------------------------------------
 
@@ -433,9 +440,48 @@ ggplot(data_all,aes(x=Moonlight,y=G_fisher)) + geom_jitter() + geom_point(alpha=
 tab_model(gs.null,gs1,gs2,gs3,gs4,gs5,gs6,gs7,gs8,gs9,gs10,gs11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
 
 
+# ARCTIINAE
 
-UnderComplex + CanopyCover + VerticalComplex
+as.null <- lmer(A_fisher ~ 1+(1|Moonlight)+(1|Habitat),
+                data = data_all); summary(as.null) 
 
+as1 <- lmer(A_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as1)  
+
+as2 <- lmer(A_fisher ~ UnderComplex + CanopyCover+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as2)  
+
+as3 <- lmer(A_fisher ~ UnderComplex+VerticalComplex+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as3) 
+
+as4 <- lmer(A_fisher ~ CanopyCover + VerticalComplex+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as4) 
+
+as5 <- lmer(A_fisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as5)
+
+as6 <- lmer(A_fisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as6)  
+
+as7 <- lmer(A_fisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as7)  
+
+as8 <- lmer(A_fisher ~ (UnderComplex*CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as8)  
+
+as9 <- lmer(A_fisher ~ (UnderComplex*CanopyCover)+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as9)  
+
+as10 <- lmer(A_fisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as10) 
+
+as11 <- lmer(A_fisher ~ (CanopyCover*VerticalComplex)+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(as11) 
+
+
+tab_model(as.null,as1,as2,as3,as4,as5,as6,as7,as8,as9,as10,as11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+anova(a.null,a1,a2,a3,a4,a5,a6,a7)
 
 
 
