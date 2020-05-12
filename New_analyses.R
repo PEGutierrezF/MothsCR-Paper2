@@ -4,9 +4,20 @@
 
 # AAR
 
-# Fisher's alpha of moth data ---------------------------------------------
+
+# Loading libraries -------------------------------------------------------
 
 library(vegan)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(glmulti)
+library(MASS)
+library(fitdistrplus)
+library(corrplot)
+library(sjPlot)
+
+# Fisher's alpha of moth data ---------------------------------------------
 
 G_matrix <- read.csv('Geo_site_matrix.csv')
 G_fisher <- fisher.alpha(G_matrix) 
@@ -25,9 +36,6 @@ A_fisher <- as.data.frame(A_fisher)
 plants <- read.csv("Plant_matrix.csv")
 habitat <- read.csv("Habitat.csv")
 
-#install.packages("MASS")
-library(MASS)
-
 set.seed(15)
 PlantsOrd <- metaMDS(plants,distance = "bray", k = 3,trymax=100)
 summary(PlantsOrd)
@@ -45,7 +53,7 @@ data_all <- cbind(covar, nms_axis, G_fisher, A_fisher)
 
 # Checking distribution of data -------------------------------------------
 
-library(fitdistrplus)
+
 descdist(data_all$SpRichness, discrete=FALSE, boot=500) # UNIFORM
 descdist(data_all$VegDensity, discrete=FALSE, boot=500) # GAMMA
 descdist(data_all$VegDiversity, discrete=FALSE, boot=500) # BETA
@@ -89,7 +97,6 @@ descdist(data_all$logGfisher, discrete=FALSE, boot=500)
 
 # Checking for collinearity of variables ----------------------------------
 
-library(corrplot)
 var_cor=subset(data_all, select = c("SpRichness","VegDensity","VegDiversity",
                              "UnderDensity","UnderComplex","UnderCover",
                              "VerticalComplex","CanopyCover",
@@ -157,14 +164,6 @@ corrplot(cor(var_cor_struc,use="pairwise.complete.obs", method = "spearman"),
 # According to the correlation plot that includes all variables, there were 5 
 # variables that were selected as not being correlated:
 # Vegetation Diversity, Understory Complexity, Canopy Cover, NMDS 1 and NMDS 2
-
-#install.packages("lme4")
-library(lme4)
-#install.packages("lmerTest")
-library(lmerTest)
-#install.packages("glmulti")
-library(glmulti)
-
 
 # Functions
 lmer.glmulti=function(formula, data, random = "",...) { ### glmulti
@@ -294,66 +293,151 @@ Arc_str_final <- lmer(A_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(
 # Running models individually, without glmulti --------------------------------------------
 
 
-# Floristic model
+# Floristic model ------------------------------------------------------------------------
 
 # GEOMETRIDAE
 
-g.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(g.null)
+gf.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf.null)
 
-g1 <- glmer(G_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(g1)
+gf1 <- glmer(G_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf1)
 
-g2 <- glmer(G_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(g2)
+gf2 <- glmer(G_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf2)
 
-g3 <- glmer(G_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(g3)
+gf3 <- glmer(G_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf3)
 
-g4 <- glmer(G_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(g4)
+gf4 <- glmer(G_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf4) # is Singular
 
-g5 <- glmer(G_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(g5)
+gf5 <- glmer(G_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf5)
 
-g6 <- glmer(G_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(g6)
+gf6 <- glmer(G_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf6) # is Singular
 
-g7 <- glmer(G_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(g7)
+gf7 <- glmer(G_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf7)
+
+gf8 <- glmer(G_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf8)
+
+gf9 <- glmer(G_fisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf9)
+
+gf10 <- glmer(G_fisher ~ (VegDiversity*NMDS2)+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf10)
+
+gf11 <- glmer(G_fisher ~ (NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+            data = data_all, family=Gamma(link = log)); summary(gf11)
+
+ggplot(data_all,aes(x=Habitat,y=G_fisher)) + geom_jitter() + geom_boxplot(alpha=0.2) 
+ggplot(data_all,aes(x=Moonlight,y=G_fisher)) + geom_jitter() + geom_point(alpha=0.2) 
 
 
-# install.packages("sjPlot")
-library(sjPlot)
-
-tab_model(g.null,g1,g2,g3,g4,g5,g6,g7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+tab_model(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7,gf8,gf9,gf10,gf11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
 
 
 # ARCTIINAE
 
 
-a.null <- lmer(A_fisher ~ 1+(1|Moonlight)+(1|Habitat),
-                data = data_all); summary(a.null)
+af.null <- lmer(A_fisher ~ 1+(1|Moonlight)+(1|Habitat),
+                data = data_all); summary(af.null)  # is Singular
 
-a1 <- lmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(a1)
+af1 <- lmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(af1)  # is Singular
 
-a2 <- lmer(A_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(a2)
+af2 <- lmer(A_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(af2)  # is Singular
 
-a3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(a3)
+af3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(af3)  # is Singular
 
-a4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(a4)
+af4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(af4)  # is Singular
 
-a5 <- lmer(A_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(a5)
+af5 <- lmer(A_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(af5)
 
-a6 <- lmer(A_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(a6)
+af6 <- lmer(A_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(af6)  # is Singular
 
-a7 <- lmer(A_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(a7)
+af7 <- lmer(A_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(af7)  # failed to converge
 
-tab_model(a.null,a1,a2,a3,a4,a5,a6,a7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+af8 <- lmer(A_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+           data = data_all); summary(af8)  # is Singular
+
+af9 <- lmer(A_fisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
+           data = data_all); summary(af9)  
+
+af10 <- lmer(A_fisher ~ (VegDiversity*NMDS2)+(1|Moonlight)+(1|Habitat),
+           data = data_all); summary(af10)  # is Singular
+
+af11 <- lmer(A_fisher ~ (NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+           data = data_all); summary(af11)  # is Singular
+
+tab_model(af.null,af1,af2,af3,af4,af5,af6,af7,af8,af9,af10,af11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+anova(a.null,a1,a2,a3,a4,a5,a6,a7)
+
+
+# Structural model -------------------------------------------------------------------------
+
+# GEOMETRIDAE
+
+gs.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
+                 data = data_all, family=Gamma(link = log)); summary(gs.null)
+
+gs1 <- glmer(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs1)
+
+gs2 <- glmer(G_fisher ~ UnderComplex + CanopyCover +(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs2)
+
+gs3 <- glmer(G_fisher ~ UnderComplex+VerticalComplex+(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs3)
+
+gs4 <- glmer(G_fisher ~ CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs4)
+
+gs5 <- glmer(G_fisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs5)
+
+gs6 <- glmer(G_fisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs6) 
+
+gs7 <- glmer(G_fisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs7)
+
+gs8 <- glmer(G_fisher ~ (UnderComplex * CanopyCover * VerticalComplex) +(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs8)
+
+gs9 <- glmer(G_fisher ~ (UnderComplex * CanopyCover) +(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs9)
+
+gs10 <- glmer(G_fisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs10)
+
+gs11 <- glmer(G_fisher ~ (CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
+             data = data_all, family=Gamma(link = log)); summary(gs11)
+
+
+
+ggplot(data_all,aes(x=Habitat,y=G_fisher)) + geom_jitter() + geom_boxplot(alpha=0.2) 
+ggplot(data_all,aes(x=Moonlight,y=G_fisher)) + geom_jitter() + geom_point(alpha=0.2) 
+
+
+tab_model(gs.null,gs1,gs2,gs3,gs4,gs5,gs6,gs7,gs8,gs9,gs10,gs11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+
+
+UnderComplex + CanopyCover + VerticalComplex
+
+
+
+
+
+
