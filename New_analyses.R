@@ -152,10 +152,10 @@ corrplot(cor(var_cor_struc,use="pairwise.complete.obs", method = "spearman"),
 # Arctiinae - normal, use lmer
 
 # QUESTIONS: 
-# ADD SITE AS RANDOM EFFECT???
+# ADD SITE AS RANDOM EFFECT??? --- NO, because data is aggregated per site
 # HOW TO CONDUCT A SPATIAL AUTOCORRELATION TEST WITH LAT LONG OF SITES?
 # OKAY TO REMOVE BASAL AREA FROM ANALYSES?
-# HOW TO CHECK FOR MODEL VALIDATION
+# HOW TO CHECK FOR MODEL VALIDATION --- not needed, I think
 
 
 
@@ -217,22 +217,35 @@ Arc_final <- lmer(A_fisher ~1+UnderComplex+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat)
 
 Geom_flor <- glmulti(G_fisher ~ VegDiversity+NMDS1+NMDS2,
                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                    data=data_all, method ="h", crit = "aicc")
-# ERROR: function above does not work with glmer.glmulti. WHY?
+                    data=data_all, method ="h", crit = "aicc")  # is Singular
 
 print(Geom_flor)
 AIC <- weightable(Geom_flor)
 AIC[1:7,]
 plot(Geom_flor, type="s")
 
-Geom_flor_final <- glmer(G_fisher ~1+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+Geom_flor_final <- glmer(G_fisher ~1+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),  # is Singular
                     data = data_all, family=Gamma(link = log)); summary(Geom_flor_final)
+
+
+# Log transformed Geometridae
+Geom_log_flor <- glmulti(logGfisher ~ VegDiversity+NMDS1+NMDS2,
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                    data=data_all, method = "h", crit = "aicc")  # is Singular
+print(Geom_log_flor)
+AIC <- weightable(Geom_log_flor)
+AIC[1:5,]
+plot(Geom_log_flor, type="s")
+
+
+Geom_log_flor_final <- lmer(logGfisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
+                       data = data_all); summary(Geom_log_flor_final)  # is Singular
 
 # ARCTIINAE
 
 Arc_flor <- glmulti(A_fisher ~ VegDiversity+NMDS1+NMDS2,
                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                   data=data_all, method = "h", crit = "aicc")
+                   data=data_all, method = "h", crit = "aicc")  # is Singular
 print(Arc_flor)
 AIC <- weightable(Arc_flor)
 AIC[1:2,]
@@ -240,7 +253,7 @@ plot(Arc_flor, type="s")
 
 
 Arc_flor_final <- lmer(A_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
-                  data = data_all); summary(Arc_flor_final)
+                  data = data_all); summary(Arc_flor_final)  # is Singular
 
 
 # Structural Model --------------------------------------------------------
@@ -254,8 +267,7 @@ Arc_flor_final <- lmer(A_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
 
 Geom_str <- glmulti(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex,
                      level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                     data=data_all, method ="h", crit = "aicc")
-# ERROR: function above does not work with glmer.glmulti. WHY?
+                     data=data_all, method ="h", crit = "aicc") # is Singular
 
 print(Geom_str)
 AIC <- weightable(Geom_str)
@@ -265,11 +277,25 @@ plot(Geom_str, type="s")
 Geom_str_final <- glmer(G_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(1|Habitat),
                          data = data_all, family=Gamma(link = log)); summary(Geom_str_final)
 
+# Log transformed Geometridae
+
+Geom_log_str <- glmulti(logGfisher ~ UnderComplex + CanopyCover + VerticalComplex,
+                   level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                   data=data_all, method = "h", crit = "aicc")  # is Singular
+print(Geom_log_str)
+AIC <- weightable(Geom_log_str)
+AIC[1:3,]
+plot(Geom_log_str, type="s")
+
+
+Geom_log_str_final <- lmer(logGfisher ~1+VerticalComplex+(1|Moonlight)+(1|Habitat),
+                      data = data_all); summary(Geom_log_str_final)
+
 # ARCTIINAE
 
 Arc_str <- glmulti(A_fisher ~ UnderComplex + CanopyCover + VerticalComplex,
                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                    data=data_all, method = "h", crit = "aicc")
+                    data=data_all, method = "h", crit = "aicc")  # is Singular
 print(Arc_str)
 AIC <- weightable(Arc_str)
 AIC[1:3,]
@@ -329,7 +355,7 @@ gf7 <- glmer(G_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
             data = data_all, family=Gamma(link = log)); summary(gf7)
 
 gf8 <- glmer(G_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(gf8)
+            data = data_all, family=Gamma(link = log)); summary(gf8) # failed to converge
 
 gf9 <- glmer(G_fisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
             data = data_all, family=Gamma(link = log)); summary(gf9)
@@ -345,6 +371,9 @@ ggplot(data_all,aes(x=Moonlight,y=G_fisher)) + geom_jitter() + geom_point(alpha=
 
 
 tab_model(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7,gf8,gf9,gf10,gf11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+# According to this, the model that includes (1 + VegDiversity) has the lowest AIC
+# Using glmulti, the best model was (1 + NMDS1 + NMDS2)
 
 
 # ARCTIINAE
@@ -390,6 +419,9 @@ tab_model(af.null,af1,af2,af3,af4,af5,af6,af7,af8,af9,af10,af11, show.aic = TRUE
 
 anova(a.null,a1,a2,a3,a4,a5,a6,a7)
 
+# According to this, the model that includes (1 + NMDS1) has the lowest AIC
+# But, there were a few other models that has <2 AIC scores, so need to check.
+# Using glmulti, the best model was also (1 + NMDS1)
 
 # Structural model -------------------------------------------------------------------------
 
@@ -411,25 +443,25 @@ gs4 <- glmer(G_fisher ~ CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat)
              data = data_all, family=Gamma(link = log)); summary(gs4)
 
 gs5 <- glmer(G_fisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs5)
+             data = data_all, family=Gamma(link = log)); summary(gs5) # does not converge
 
 gs6 <- glmer(G_fisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs6) 
+             data = data_all, family=Gamma(link = log)); summary(gs6) # does not converge
 
 gs7 <- glmer(G_fisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
              data = data_all, family=Gamma(link = log)); summary(gs7)
 
 gs8 <- glmer(G_fisher ~ (UnderComplex * CanopyCover * VerticalComplex) +(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs8)
+             data = data_all, family=Gamma(link = log)); summary(gs8) # does not converge
 
 gs9 <- glmer(G_fisher ~ (UnderComplex * CanopyCover) +(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs9)
+             data = data_all, family=Gamma(link = log)); summary(gs9) # does not converge
 
 gs10 <- glmer(G_fisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
              data = data_all, family=Gamma(link = log)); summary(gs10)
 
 gs11 <- glmer(G_fisher ~ (CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs11)
+             data = data_all, family=Gamma(link = log)); summary(gs11) # does not converge
 
 
 
@@ -439,11 +471,13 @@ ggplot(data_all,aes(x=Moonlight,y=G_fisher)) + geom_jitter() + geom_point(alpha=
 
 tab_model(gs.null,gs1,gs2,gs3,gs4,gs5,gs6,gs7,gs8,gs9,gs10,gs11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
 
+# According to this, the null model has the lowest AIC
+# With glmulti, the best model included (1 + UnderComplex + VerticalComplex)
 
 # ARCTIINAE
 
 as.null <- lmer(A_fisher ~ 1+(1|Moonlight)+(1|Habitat),
-                data = data_all); summary(as.null) 
+                data = data_all); summary(as.null) # is Singular
 
 as1 <- lmer(A_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
             data = data_all); summary(as1)  
@@ -458,7 +492,7 @@ as4 <- lmer(A_fisher ~ CanopyCover + VerticalComplex+(1|Moonlight)+(1|Habitat),
             data = data_all); summary(as4) 
 
 as5 <- lmer(A_fisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as5)
+            data = data_all); summary(as5)  # is Singular
 
 as6 <- lmer(A_fisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
             data = data_all); summary(as6)  
@@ -467,7 +501,7 @@ as7 <- lmer(A_fisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
             data = data_all); summary(as7)  
 
 as8 <- lmer(A_fisher ~ (UnderComplex*CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as8)  
+            data = data_all); summary(as8)  # in Singular 
 
 as9 <- lmer(A_fisher ~ (UnderComplex*CanopyCover)+(1|Moonlight)+(1|Habitat),
             data = data_all); summary(as9)  
@@ -483,7 +517,101 @@ tab_model(as.null,as1,as2,as3,as4,as5,as6,as7,as8,as9,as10,as11, show.aic = TRUE
 
 anova(a.null,a1,a2,a3,a4,a5,a6,a7)
 
+# According to this, the model that includes (1+UnderComplex*VerticalComplex) has the lowest AIC
+# With glmulti, the best model was (1+UnderComplex+VerticalComplex), but I have
+# yet to conduct interactions (*) using glmulti. 
 
 
 
+# -------------------------------------------------------------------------
+
+# Geometridae models using log transformed G_fisher. ----------------------
+# (lmer instead of glmer with gamma dist)
+
+# Floristic
+
+gft.null <- lmer(logGfisher ~ 1+(1|Moonlight)+(1|Habitat),
+                data = data_all); summary(gft.null)  # is Singular
+
+gft1 <- lmer(logGfisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft1)  # is Singular
+
+gft2 <- lmer(logGfisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft2) 
+
+gft3 <- lmer(logGfisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft3) 
+
+gft4 <- lmer(logGfisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft4)  # is Singular
+
+gft5 <- lmer(logGfisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft5)
+
+gft6 <- lmer(logGfisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft6)  # is Singular
+
+gft7 <- lmer(logGfisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft7)  
+
+gft8 <- lmer(logGfisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft8)  
+
+gft9 <- lmer(logGfisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gft9)  
+
+gft10 <- lmer(logGfisher ~ (VegDiversity*NMDS2)+(1|Moonlight)+(1|Habitat),
+             data = data_all); summary(gft10)  
+
+gft11 <- lmer(logGfisher ~ (NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+             data = data_all); summary(gft11) 
+
+tab_model(gft.null,gft1,gft2,gft3,gft4,gft5,gft6,gft7,gft8,gft9,gft10,gft11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+# According to this, the null model has the lowest AIC
+# Using glmulti, the best model was (1 + NMDS1)
+
+# Structural
+
+gst.null <- lmer(logGfisher ~ 1+(1|Moonlight)+(1|Habitat),
+                data = data_all); summary(gst.null) 
+
+gst1 <- lmer(logGfisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst1)  # is Singular
+
+gst2 <- lmer(logGfisher ~ UnderComplex + CanopyCover+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst2)  # is Singular
+
+gst3 <- lmer(logGfisher ~ UnderComplex+VerticalComplex+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst3)  # is Singular
+
+gst4 <- lmer(logGfisher ~ CanopyCover + VerticalComplex+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst4) 
+
+gst5 <- lmer(logGfisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst5)  # is Singular
+
+gst6 <- lmer(logGfisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst6)  
+
+gst7 <- lmer(logGfisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst7)  
+
+gst8 <- lmer(logGfisher ~ (UnderComplex*CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst8)  # in Singular 
+
+gst9 <- lmer(logGfisher ~ (UnderComplex*CanopyCover)+(1|Moonlight)+(1|Habitat),
+            data = data_all); summary(gst9)  # does not converge
+
+gst10 <- lmer(logGfisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
+             data = data_all); summary(gst10) 
+
+gst11 <- lmer(logGfisher ~ (CanopyCover*VerticalComplex)+(1|Moonlight)+(1|Habitat),
+             data = data_all); summary(gst11)  # is Singular
+
+
+tab_model(gst.null,gst1,gst2,gst3,gst4,gst5,gst6,gst7,gst8,gst9,gst10,gst11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+# According to this, the null model has the lowest AIC
+# Using glmulti, the best model was (1 + VerticalComplex)
 
