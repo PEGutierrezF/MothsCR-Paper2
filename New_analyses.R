@@ -16,6 +16,7 @@ library(MASS)
 library(fitdistrplus)
 library(corrplot)
 library(sjPlot)
+library(arm)
 
 # Fisher's alpha of moth data ---------------------------------------------
 
@@ -155,7 +156,7 @@ corrplot(cor(var_cor_struc,use="pairwise.complete.obs", method = "spearman"),
 # ADD SITE AS RANDOM EFFECT??? --- NO, because data is aggregated per site
 # HOW TO CONDUCT A SPATIAL AUTOCORRELATION TEST WITH LAT LONG OF SITES?
 # OKAY TO REMOVE BASAL AREA FROM ANALYSES?
-# HOW TO CHECK FOR MODEL VALIDATION --- not needed, I think
+# HOW TO CHECK FOR MODEL VALIDATION --- not needed because I'm not making future predictions
 
 
 
@@ -164,6 +165,15 @@ corrplot(cor(var_cor_struc,use="pairwise.complete.obs", method = "spearman"),
 # According to the correlation plot that includes all variables, there were 5 
 # variables that were selected as not being correlated:
 # Vegetation Diversity, Understory Complexity, Canopy Cover, NMDS 1 and NMDS 2
+
+
+# First, let's rescale the predictor variables, so they are all in the same scale
+data_all$VegDiversity = rescale(data_all$VegDiversity)
+data_all$NMDS1 = rescale(data_all$NMDS1)
+data_all$NMDS2 = rescale(data_all$NMDS2)
+data_all$UnderComplex = rescale(data_all$UnderComplex)
+data_all$CanopyCover = rescale(data_all$CanopyCover)
+data_all$VerticalComplex = rescale(data_all$VerticalComplex)
 
 # Functions
 lmer.glmulti=function(formula, data, random = "",...) { ### glmulti
@@ -177,32 +187,47 @@ glmer.glmulti=function(formula, data, random = "",...) {
 # GEOMETRIDAE
 
 Geom_all <- glmulti(G_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
-                    level=1, fitfunc=glmer.glmulti, random=c("+(1|Moonlight)"), 
-                    data=data_all, method ="h", crit = "aicc")
+                    level=1, fitfunc=glmer.glmulti, random=c("+(1|Habitat)"), 
+                    data=data_all, method ="h", crit = "aicc")  # is Singular (32 warnings)
 
 Geom_all <- glmulti(G_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
                   level=1, fitfunc=glmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                  data=data_all, method ="h", crit = "aicc")
+                  data=data_all, method ="h", crit = "aicc")   # is Singular (32 warnings)
+
+Geom_all <- glmulti(logGfisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
+                   level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                   data=data_all, method = "h", crit = "aicc")  # in Singular (many many warnings)
+
+Geom_all <- glmulti(logGfisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,  # BEST OPTION YET
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Habitat)"), 
+                    data=data_all, method = "h", crit = "aicc") # no warnings
+
 print(Geom_all)
 AIC <- weightable(Geom_all)
 AIC[1:7,]
 plot(Geom_all, type="s")
 
-Geom_final <- glmer(G_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
-            data = data_all, family=Gamma(link = log)); summary(Geom_final)
+# Geom_final <- glmer(G_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
+#            data = data_all, family=Gamma(link = log)); summary(Geom_final)
+
+Geom_final <- lmer(logGfisher ~1+VegDiversity+(1|Habitat),  # BEST MODEL
+                  data = data_all); summary(Geom_final)
 
 # ARCTIINAE
 
 Arc_all <- glmulti(A_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,
                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                   data=data_all, method = "h", crit = "aicc")
+                   data=data_all, method = "h", crit = "aicc")  # is Singular (many many warnings)
+
+Arc_all <- glmulti(A_fisher ~ VegDiversity+UnderComplex+CanopyCover+NMDS1+NMDS2,   # BEST OPTION YET
+                   level=1, fitfunc=lmer.glmulti, random=c("+(1|Habitat)"), 
+                   data=data_all, method = "h", crit = "aicc")  #is Singular (only 1 warning)
 print(Arc_all)
 AIC <- weightable(Arc_all)
-AIC[1:2,]
+AIC[1:6,]
 plot(Arc_all, type="s")
 
-
-Arc_final <- lmer(A_fisher ~1+UnderComplex+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+Arc_final <- lmer(A_fisher ~1+VegDiversity+CanopyCover+NMDS1+NMDS2+(1|Habitat),  # BEST MODEL
                     data = data_all); summary(Arc_final)
 
 
@@ -213,47 +238,55 @@ Arc_final <- lmer(A_fisher ~1+UnderComplex+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat)
 # variables that were selected as not being correlated:
 # Vegetation Diversity, NMDS 1 and NMDS 2
 
+
 # GEOMETRIDAE
 
 Geom_flor <- glmulti(G_fisher ~ VegDiversity+NMDS1+NMDS2,
                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                    data=data_all, method ="h", crit = "aicc")  # is Singular
+                    data=data_all, method ="h", crit = "aicc")  # is Singular (3 warnings)
+
+Geom_flor <- glmulti(G_fisher ~ VegDiversity+NMDS1+NMDS2,
+                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Habitat)"), 
+                     data=data_all, method ="h", crit = "aicc")  # is Singular (3 warnings)
+
+Geom_flor <- glmulti(logGfisher ~ VegDiversity+NMDS1+NMDS2,
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                    data=data_all, method = "h", crit = "aicc")  # in Singular (7 warnings)
+
+Geom_flor <- glmulti(logGfisher ~ VegDiversity+NMDS1+NMDS2,   # BEST OPTION YET
+                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Habitat)"), 
+                     data=data_all, method = "h", crit = "aicc")  # no warnings
 
 print(Geom_flor)
 AIC <- weightable(Geom_flor)
 AIC[1:7,]
 plot(Geom_flor, type="s")
 
-Geom_flor_final <- glmer(G_fisher ~1+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),  # is Singular
-                    data = data_all, family=Gamma(link = log)); summary(Geom_flor_final)
+# Geom_flor_final <- glmer(G_fisher ~1+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),  # is Singular
+#                     data = data_all, family=Gamma(link = log)); summary(Geom_flor_final)
 
+Geom_flor_final <- lmer(logGfisher ~1+VegDiversity+(1|Habitat),   # BEST MODEL ****
+                   data = data_all); summary(Geom_flor_final)
 
-# Log transformed Geometridae
-Geom_log_flor <- glmulti(logGfisher ~ VegDiversity+NMDS1+NMDS2,
-                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                    data=data_all, method = "h", crit = "aicc")  # is Singular
-print(Geom_log_flor)
-AIC <- weightable(Geom_log_flor)
-AIC[1:5,]
-plot(Geom_log_flor, type="s")
-
-
-Geom_log_flor_final <- lmer(logGfisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
-                       data = data_all); summary(Geom_log_flor_final)  # is Singular
 
 # ARCTIINAE
 
 Arc_flor <- glmulti(A_fisher ~ VegDiversity+NMDS1+NMDS2,
                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                   data=data_all, method = "h", crit = "aicc")  # is Singular
+                   data=data_all, method = "h", crit = "aicc")  # is Singular (9 warnings)
+
+Arc_flor <- glmulti(A_fisher ~ VegDiversity+NMDS1+NMDS2,       # BEST OPTION YET
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Habitat)"), 
+                    data=data_all, method = "h", crit = "aicc")  # no warnings
+
 print(Arc_flor)
 AIC <- weightable(Arc_flor)
-AIC[1:2,]
+AIC[1:3,]
 plot(Arc_flor, type="s")
 
 
-Arc_flor_final <- lmer(A_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
-                  data = data_all); summary(Arc_flor_final)  # is Singular
+Arc_flor_final <- lmer(A_fisher ~1+VegDiversity+NMDS1+NMDS2+(1|Habitat),    # BEST MODEL ****
+                  data = data_all); summary(Arc_flor_final)  
 
 
 # Structural Model --------------------------------------------------------
@@ -267,43 +300,50 @@ Arc_flor_final <- lmer(A_fisher ~1+NMDS1+(1|Moonlight)+(1|Habitat),
 
 Geom_str <- glmulti(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex,
                      level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                     data=data_all, method ="h", crit = "aicc") # is Singular
+                     data=data_all, method ="h", crit = "aicc") # is Singular (6 warnings)
+
+Geom_str <- glmulti(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex,
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Habitat)"), 
+                    data=data_all, method ="h", crit = "aicc") # is Singular (2 warnings)
+
+Geom_str <- glmulti(logGfisher ~ UnderComplex + CanopyCover + VerticalComplex,
+                   level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                   data=data_all, method = "h", crit = "aicc")  # is Singular (9 warnings)
+
+Geom_str <- glmulti(logGfisher ~ UnderComplex + CanopyCover + VerticalComplex,  # BEST OPTION YET
+                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Habitat)"), 
+                    data=data_all, method = "h", crit = "aicc")  # no warnings
+
 
 print(Geom_str)
 AIC <- weightable(Geom_str)
 AIC[1:7,]
 plot(Geom_str, type="s")
 
-Geom_str_final <- glmer(G_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(1|Habitat),
-                         data = data_all, family=Gamma(link = log)); summary(Geom_str_final)
+# Geom_str_final <- glmer(G_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(1|Habitat),
+#                          data = data_all, family=Gamma(link = log)); summary(Geom_str_final)
 
-# Log transformed Geometridae
-
-Geom_log_str <- glmulti(logGfisher ~ UnderComplex + CanopyCover + VerticalComplex,
-                   level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                   data=data_all, method = "h", crit = "aicc")  # is Singular
-print(Geom_log_str)
-AIC <- weightable(Geom_log_str)
-AIC[1:3,]
-plot(Geom_log_str, type="s")
-
-
-Geom_log_str_final <- lmer(logGfisher ~1+VerticalComplex+(1|Moonlight)+(1|Habitat),
-                      data = data_all); summary(Geom_log_str_final)
+Geom_str_final <- lmer(logGfisher ~ 1+(1|Habitat),
+                      data = data_all); summary(Geom_str_final)   # BEST MODEL *** Null :(
 
 # ARCTIINAE
 
 Arc_str <- glmulti(A_fisher ~ UnderComplex + CanopyCover + VerticalComplex,
                     level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
-                    data=data_all, method = "h", crit = "aicc")  # is Singular
+                    data=data_all, method = "h", crit = "aicc")  # is Singular (9 warnings)
+
+Arc_str <- glmulti(A_fisher ~ UnderComplex + CanopyCover + VerticalComplex,  # BEST OPTION YET
+                   level=1, fitfunc=lmer.glmulti, random=c("+(1|Habitat)"), 
+                   data=data_all, method = "h", crit = "aicc")  # no warnings
+
 print(Arc_str)
 AIC <- weightable(Arc_str)
-AIC[1:3,]
+AIC[1:4,]
 plot(Arc_str, type="s")
 
 
-Arc_str_final <- lmer(A_fisher ~1+UnderComplex + VerticalComplex+(1|Moonlight)+(1|Habitat),
-                       data = data_all); summary(Arc_str_final)
+Arc_str_final <- lmer(A_fisher ~ 1+UnderComplex+CanopyCover+VerticalComplex+(1|Habitat),
+                       data = data_all); summary(Arc_str_final)   # BEST MODEL ***
 
 #------------------------------------------------------------------------------------------
 #NOTES
@@ -422,6 +462,10 @@ anova(a.null,a1,a2,a3,a4,a5,a6,a7)
 # According to this, the model that includes (1 + NMDS1) has the lowest AIC
 # But, there were a few other models that has <2 AIC scores, so need to check.
 # Using glmulti, the best model was also (1 + NMDS1)
+
+# si la varianza de Moonlight es cerca de 0 en todos los modelos de Arctiinae, tal vez puedo
+# remover Moonlight de todos los modelos y justificarlo bien. 
+# Tal vez la Luna afecta las Arctiinae mucho menos que a las Geometridae... Revisar esto
 
 # Structural model -------------------------------------------------------------------------
 
@@ -614,4 +658,7 @@ tab_model(gst.null,gst1,gst2,gst3,gst4,gst5,gst6,gst7,gst8,gst9,gst10,gst11, sho
 
 # According to this, the null model has the lowest AIC
 # Using glmulti, the best model was (1 + VerticalComplex)
+
+
+
 
