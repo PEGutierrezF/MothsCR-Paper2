@@ -341,7 +341,6 @@ AIC <- weightable(Arc_str)
 AIC[1:4,]
 plot(Arc_str, type="s")
 
-
 Arc_str_final <- lmer(A_fisher ~ 1+UnderComplex+CanopyCover+VerticalComplex+(1|Habitat),
                        data = data_all); summary(Arc_str_final)   # BEST MODEL ***
 
