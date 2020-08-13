@@ -16,6 +16,7 @@ library(glmulti)
 library(MASS)
 library(sjPlot)
 library(arm)
+library(AICcmodavg)
 
 
 # loading data ------------------------------------------------------------
@@ -27,6 +28,7 @@ data_all <- as.data.frame(data_all)
 # Notes -------------------------------------------------------------------
 
 # Geometridae - gamma distribution, use glmer
+# or I could transform the Geometridae data to be able to use lmer instead of glmer
 # Arctiinae - normal distribution, use lmer
 
 # non-correlated floristic variables: Vegetation Diversity, NMDS 1 and NMDS 2
@@ -46,101 +48,118 @@ data_all$VerticalComplex = rescale(data_all$VerticalComplex)
 
 # Individual models (without glmulti) -------------------------------------------------------
 
-# Floristic model ------------------------------------------------------------------------
+# Floristic models ------------------------------------------------------------------------
 
-# GEOMETRIDAE
+# GEOMETRIDAE floristic models --------------------------------------------------------------
 
 gf.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
-                 data = data_all, family=Gamma(link = log)); summary(gf.null)
+                 data = data_all, family=Gamma(link = inverse)); summary(gf.null)
 
 gf1 <- glmer(G_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf1)
+             data = data_all, family=Gamma(link = log)); summary(gf1)  # failed to converge with inverse
 
 gf2 <- glmer(G_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf2)
+             data = data_all, family=Gamma(link = inverse)); summary(gf2)  
 
 gf3 <- glmer(G_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf3)
+             data = data_all, family=Gamma(link = inverse)); summary(gf3)
 
 gf4 <- glmer(G_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf4) # is Singular
+             data = data_all, family=Gamma(link = inverse)); summary(gf4) 
 
 gf5 <- glmer(G_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf5)
+             data = data_all, family=Gamma(link = inverse)); summary(gf5)
 
 gf6 <- glmer(G_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf6) # is Singular
+             data = data_all, family=Gamma(link = inverse)); summary(gf6) 
 
 gf7 <- glmer(G_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf7)
+             data = data_all, family=Gamma(link = inverse)); summary(gf7)
 
-gf8 <- glmer(G_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf8) # failed to converge
+# gf8 <- glmer(G_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+#             data = data_all, family=Gamma(link = log)); summary(gf8) # failed to converge
 
-gf9 <- glmer(G_fisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf9)
+# gf9 <- glmer(G_fisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
+#             data = data_all, family=Gamma(link = log)); summary(gf9)
 
-gf10 <- glmer(G_fisher ~ (VegDiversity*NMDS2)+(1|Moonlight)+(1|Habitat),
-              data = data_all, family=Gamma(link = log)); summary(gf10)
+# gf10 <- glmer(G_fisher ~ (VegDiversity*NMDS2)+(1|Moonlight)+(1|Habitat),
+#              data = data_all, family=Gamma(link = log)); summary(gf10)
 
-gf11 <- glmer(G_fisher ~ (NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
-              data = data_all, family=Gamma(link = log)); summary(gf11)
+# gf11 <- glmer(G_fisher ~ (NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+#              data = data_all, family=Gamma(link = log)); summary(gf11)
 
 ggplot(data_all,aes(x=Habitat,y=G_fisher)) + geom_jitter() + geom_boxplot(alpha=0.2) 
 ggplot(data_all,aes(x=Moonlight,y=G_fisher)) + geom_jitter() + geom_point(alpha=0.2) 
 
 
-tab_model(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7,gf8,gf9,gf10,gf11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+tab_model(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
 
-# According to this, the model that includes (1 + VegDiversity) has the lowest AIC
+anova(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7)
+
+# According to this, the model that includes (1+VegDiversity+NMDS2) has the lowest AIC , 
+# but there is another model that is close (1+VegDiversity)... 
+# Need to compare with another method gf3 vs gf5
 # Using glmulti, the best model was (1 + NMDS1 + NMDS2)
 
 
-# ARCTIINAE
+# here is another method of comparing models: https://www.scribbr.com/statistics/akaike-information-criterion/
+
+models <- list(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7)
+model.names <- c("gf.null","gf1","gf2","gf3","gf4","gf5","gf6","gf7")
+aictab(cand.set = models, modnames = model.names)
 
 
-af.null <- lmer(A_fisher ~ 1+(1|Moonlight)+(1|Habitat),
-                data = data_all); summary(af.null)  # is Singular
 
-af1 <- lmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(af1)  # is Singular
 
-af2 <- lmer(A_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(af2)  # is Singular
+# ARCTIINAE floristic models --------------------------------------------------------------
+# Had to remove Moonlight as a random effect, because the variance was too close to cero (isSingular error)
 
-af3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(af3)  # is Singular
+af.null <- lmer(A_fisher ~ 1+(1|Habitat),
+                data = data_all); summary(af.null)  
 
-af4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(af4)  # is Singular
+af1 <- lmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Habitat),
+            data = data_all); summary(af1)  
 
-af5 <- lmer(A_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
+af2 <- lmer(A_fisher ~ VegDiversity+NMDS1+(1|Habitat),
+            data = data_all); summary(af2) 
+
+af3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Habitat),
+            data = data_all); summary(af3)  
+
+af4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Habitat),
+            data = data_all); summary(af4)  
+
+af5 <- lmer(A_fisher ~ VegDiversity+(1|Habitat),
             data = data_all); summary(af5)
 
-af6 <- lmer(A_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(af6)  # is Singular
+af6 <- lmer(A_fisher ~ NMDS1+(1|Habitat),
+            data = data_all); summary(af6) 
 
-af7 <- lmer(A_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(af7)  # failed to converge
+af7 <- lmer(A_fisher ~ NMDS2+(1|Habitat),
+            data = data_all); summary(af7) 
 
-af8 <- lmer(A_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(af8)  # is Singular
+# af8 <- lmer(A_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+#            data = data_all); summary(af8)  # is Singular
 
-af9 <- lmer(A_fisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(af9)  
+# af9 <- lmer(A_fisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
+#            data = data_all); summary(af9)  
 
-af10 <- lmer(A_fisher ~ (VegDiversity*NMDS2)+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(af10)  # is Singular
+# af10 <- lmer(A_fisher ~ (VegDiversity*NMDS2)+(1|Moonlight)+(1|Habitat),
+#             data = data_all); summary(af10)  # is Singular
 
-af11 <- lmer(A_fisher ~ (NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(af11)  # is Singular
+# af11 <- lmer(A_fisher ~ (NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
+#             data = data_all); summary(af11)  # is Singular
 
-tab_model(af.null,af1,af2,af3,af4,af5,af6,af7,af8,af9,af10,af11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+ggplot(data_all,aes(x=Habitat,y=A_fisher)) + geom_jitter() + geom_boxplot(alpha=0.2) 
+ggplot(data_all,aes(x=Moonlight,y=A_fisher)) + geom_jitter() + geom_point(alpha=0.2) 
 
-anova(a.null,a1,a2,a3,a4,a5,a6,a7)
 
-# According to this, the model that includes (1 + NMDS1) has the lowest AIC
-# But, there were a few other models that has <2 AIC scores, so need to check.
+tab_model(af.null,af1,af2,af3,af4,af5,af6,af7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+anova(af.null,af1,af2,af3,af4,af5,af6,af7)
+
+# According to this, the model that includes (1 + VegDiversity+NMDS1+NMDS2) has the lowest AIC
+# But, there is another model that is very close (1 + VegDiversity+NMDS1). Need to check which is best.
 # Using glmulti, the best model was also (1 + NMDS1)
 
 # si la varianza de Moonlight es cerca de 0 en todos los modelos de Arctiinae, tal vez puedo
@@ -149,7 +168,7 @@ anova(a.null,a1,a2,a3,a4,a5,a6,a7)
 
 # Structural model -------------------------------------------------------------------------
 
-# GEOMETRIDAE
+# GEOMETRIDAE structural models --------------------------------------------------------------
 
 gs.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
                  data = data_all, family=Gamma(link = log)); summary(gs.null)

@@ -43,16 +43,14 @@ summary(PlantsOrd)
 #Extract NMDS axis scores
 nms_axis <- scores(PlantsOrd, choices=c(1,2))
 nms_axis <- as.data.frame(nms_axis)
-write.csv(nms_axis,"C:\\Users\\aalonsor\\OneDrive - University of Vermont\\Documents\\R\\MothsCR-Paper2\\data_all.csv", row.names = TRUE)
+
 
 
 # Creating data frame with all variables ----------------------------------
 
 covar <- read.csv("covar.csv")
 data_all <- cbind(covar, nms_axis, G_fisher, A_fisher)
-
-# write.csv(data_all,"C:\\Users\\aalonsor\\OneDrive - University of Vermont\\Documents\\UVM\\Classes\\Spring 2020\\Computational Biology\\AlonsoRodzBio381\\nms_axis.csv", row.names = TRUE)
-
+write.csv(data_all,"C:\\Users\\aalonsor\\OneDrive - University of Vermont\\Documents\\R\\MothsCR-Paper2\\data_all.csv", row.names = TRUE)
 
 # Checking distribution of data -------------------------------------------
 
