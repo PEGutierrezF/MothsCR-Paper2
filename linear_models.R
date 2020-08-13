@@ -96,47 +96,78 @@ tab_model(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7, show.aic = TRUE, show.aicc = TRUE
 
 anova(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7)
 
-# According to this, the model that includes (1+VegDiversity+NMDS2) has the lowest AIC , 
-# but there is another model that is close (1+VegDiversity)... 
-# Need to compare with another method gf3 vs gf5
-# Using glmulti, the best model was (1 + NMDS1 + NMDS2)
-
-
 # here is another method of comparing models: https://www.scribbr.com/statistics/akaike-information-criterion/
 
 models <- list(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7)
 model.names <- c("gf.null","gf1","gf2","gf3","gf4","gf5","gf6","gf7")
 aictab(cand.set = models, modnames = model.names)
 
+# According to tab_model and aictab, the model that includes (1+VegDiversity+NMDS2) has the 
+# lowest AIC, but there is another model that is close (1+VegDiversity) with a deltaAIC<2... 
+# Need to compare with another method gf3 vs gf5 (e.g. model averaging)
+# Using glmulti, the best model was (1 + NMDS1 + NMDS2)
 
+
+# This method below is to compare between the best candidate models
+# this is called model averaging
+# https://danstich.github.io/stich/classes/BIOL678/06_modelSelection.html
+
+Cand.mod <- list()
+Cand.mod[[1]]<-gf3
+Cand.mod[[2]]<-gf5
+
+
+Modnames <- c("VegDiversity+NMDS2","VegDiversity") 
+aictab(cand.set = Cand.mod, modnames = Modnames)
+evidence(aictab(cand.set = Cand.mod, modnames = Modnames))
+
+confset(cand.set = Cand.mod, modnames = Modnames, second.ord = TRUE,
+        method = "raw")
+
+
+modavg(Cand.mod, "VegDiversity", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list("VegDiversity+NMDS2"), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+modavg(Cand.mod, "NMDS2", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list(""), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+# From these results, it seems that NMDS2 is not significant (CI passes by 0)
+# This might mean that NMDS2 should not be included at all, in which case the 
+# gf5 model might be the most parsimonious, which only includes VegDiversity.
+
+# ** another option to try could be using 'model.avg'
 
 
 # ARCTIINAE floristic models --------------------------------------------------------------
 # Had to remove Moonlight as a random effect, because the variance was too close to cero (isSingular error)
 
 af.null <- lmer(A_fisher ~ 1+(1|Habitat),
-                data = data_all); summary(af.null)  
+                data = data_all, REML = FALSE); summary(af.null)  
 
 af1 <- lmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Habitat),
-            data = data_all); summary(af1)  
+            data = data_all, REML = FALSE); summary(af1)     # is singular ME LLEVA PUTA
 
 af2 <- lmer(A_fisher ~ VegDiversity+NMDS1+(1|Habitat),
-            data = data_all); summary(af2) 
+            data = data_all, REML = FALSE); summary(af2) 
 
 af3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Habitat),
-            data = data_all); summary(af3)  
+            data = data_all, REML = FALSE); summary(af3)  
 
 af4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Habitat),
-            data = data_all); summary(af4)  
+            data = data_all, REML = FALSE); summary(af4)    # is singular
 
 af5 <- lmer(A_fisher ~ VegDiversity+(1|Habitat),
-            data = data_all); summary(af5)
+            data = data_all, REML = FALSE); summary(af5)
 
 af6 <- lmer(A_fisher ~ NMDS1+(1|Habitat),
-            data = data_all); summary(af6) 
+            data = data_all, REML = FALSE); summary(af6)    # is singular
 
 af7 <- lmer(A_fisher ~ NMDS2+(1|Habitat),
-            data = data_all); summary(af7) 
+            data = data_all, REML = FALSE); summary(af7) 
 
 # af8 <- lmer(A_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
 #            data = data_all); summary(af8)  # is Singular
@@ -157,6 +188,10 @@ ggplot(data_all,aes(x=Moonlight,y=A_fisher)) + geom_jitter() + geom_point(alpha=
 tab_model(af.null,af1,af2,af3,af4,af5,af6,af7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
 
 anova(af.null,af1,af2,af3,af4,af5,af6,af7)
+
+models <- list(af.null,af1,af2,af3,af4,af5,af6,af7)
+model.names <- c("af.null","af1","af2","af3","af4","af5","af6","af7")
+aictab(cand.set = models, modnames = model.names)
 
 # According to this, the model that includes (1 + VegDiversity+NMDS1+NMDS2) has the lowest AIC
 # But, there is another model that is very close (1 + VegDiversity+NMDS1). Need to check which is best.

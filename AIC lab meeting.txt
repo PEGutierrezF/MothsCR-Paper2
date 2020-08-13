@@ -1,0 +1,216 @@
+# al momento de armar el spreadsheet, tengan en consideración esto:
+# un problema q tiene el analisis es los nombres, una de las purebas (modavg) no lee mas alla de 6 caracteres o algo asi
+# Esto es especialmente problematico cuando hay modelos con interacciones (por ejemplo, tengo Depth, Discharge y Depth*Discharge, 
+# el analisis piensa q ese de interaccion es lo mismo q el modelo de "Depth" solo. Lo bueno, es q el output te saca un error y te dice q verifiques los nombres
+# Mi recomedacion es establecer un codigo para las variables desde un principio (ejemplo, X1, X2, X3 etc y entonces X1*X2 no va a dar el problema del nombre)
+
+# Yo normalize los datos de antemano. Le hize pruebas de normalidad a las "Y" (shapiro.test) y las transforme con Log si era necesario. 
+# Estandarizé todas mis X para unificarles la escala .  A cada valor le reste el promedio y lo dividí por la desviación estándar
+# No tuve problemas de normalidad cuando revisé los modelos.
+
+# Les envíe un spreadsheet de práctica, resumiendo uno mío. Aquí los nombres de las variables para que estén ubicados 
+#Y1- Abundancia promedio en rápidos
+#X1- Materia orgánica fina
+#X2- Materia orgánica gruesa
+#X3- Diversidad de sustratos
+#X4- Profundidad promedio
+#X5- Días desde la última crecida
+#X6- Índice de "flashiness"
+#X7- Descarga promedio
+
+#en R tienen que bajar (install packages) AICcmodavg y car y seleccionarlos. 
+#tambien el paquete randomForest para otra pureba. 
+
+#Ahora subir el spreadsheet. Yo lo subo pegando la ubicación (asi no hay q hacerle attach o dettach). Lo q si es q hay q poner 2 \\ en vez del 1 default
+#names(data) es para subir los nombres de tus columnas. La segunda linea es para identificar la "Y" si tienes mas de una, asi es mas facil mantener 
+#la misma hoja de datos con tu data set entero sin tenerla q editarla y editar poco el script cada vez q vas a correrlo.
+#Le cambias el num en [] de acuerdo a la columna donde este tu "y" de interes. 
+# Ahora subes los nombres nievos. Verifica q tus nombres y tus datos esten bien
+
+
+data=read.csv("C:\\Documents and Settings\\All Users\\Desktop\\data.csv",header=TRUE,sep=",")
+names(data)
+names(data)[1]="Y"
+names(data)
+data.frame(data)
+
+
+#Ahora a escribir tus modelos!!!! Unos Guidelines antes de escribirlos:
+#el primer modelo es el del intercepto q siempre tienes q anadir (como vimos en los pasados lab meetings). 
+#Los proximos incluyen tus "x". empieza con modelos sencillos de una a  una, despues mezclando 2, 3 etc y haciendo las interacciones entre ellas. 
+#En este ejemplo son lineales (y lo normal es q se use con modelos lineales), pero no tienen q serlo.
+
+# como vimos en el lab meeting de regresion, hay q evaluar tus modelos lineales para asegurate que sean viables, mirandole los residuales en las grafiquitas y pvals
+# AIC siempre te va a dar un modelo "mejor". si todos son malucos pues te chavaste.
+# transformar si es necesario
+# Cuando tienes modelos complejos (mas de una x) tienes q evaluar si hay colinealidad entre tus X. El comando es vif (variance inflation factor). Si te sale una
+#variable con un vif mayor de 10 sacala del modelo. Vuelve a correr vif hasta que los valores de cada variable sean bajitos. 
+
+
+Mod1=lm()
+par(mfrow=c(2,2))
+plot(mod1)
+#si tiene mas de una variable
+vif(mod1)
+
+
+
+# si te salen errores al momento de ver los plots, xq dice que hay un error de dimensiones, puede ser que tengas algo q se haya quedado en la memoria.
+# Dale run al comando dev.off() hasta que el resultado te de 1 
+
+
+# OTRA ALTERNATIVA PARA ARMAR MODELOS cuando tienes muchas variables
+# si necesitas ayuda con escojer los parametros adecuados para armar tu modelos esta una prueba q se llama ACE (Artificial Contrast Ensemble method).
+# Hagan un google search para aprender mas de esta prueba. 
+# esto te evalua tus Xs unas contra otras y al final te da unos Pvals y de los q puedes deducir cuales son las variables a las q se le atribuye los cambios
+#en tus datos, saltando las redundantes. Asi disminuyes tus variables y con esas armas los modelos
+# Aqui el codigo para mi hoja de datos.
+# de este codigo tendrian q editar el nVar= (tu num de variables) y X[,1:7]=data[,2:8] (esto las rotula del 1 al 7 y dice q estan en las culumnas 2 a 8).
+#corranlo en 2 partes. Primero hasta la parte de t-test y despues el resto
+#las que tengan el pval menor de <0.05 son las que debes usar pa los modelos 
+
+qArtificial=0.9
+nPerm=100
+nVar=7
+X=data.frame(matrix(nrow=nrow(data),ncol=nVar*2))
+X[,1:7]=data[,2:8]
+impor=matrix(nrow=nVar*2,ncol=nPerm)
+q=matrix(nrow=nPerm,ncol=1)
+for (i in 1:nPerm)
+{
+  for (j in 1:nVar)
+  {
+    X[,nVar+j]=sample(X[,j],length(X[,j]),replace=FALSE)
+  }
+  data2=cbind(X,data$Y)
+  names(data2)[ncol(data2)]="Y"
+  rF<-randomForest(as.numeric(data2$Y)~.,data=data2,ntree=500,classwt=c(0.5,0.5),importance=TRUE,na.action=na.omit)
+  impor[,i]<-rF$importance[,2]
+  q[i]<-quantile(impor[(nVar+1):(2*nVar),i],probs=qArtificial)
+}
+d<-matrix(nrow=nPerm,ncol=nVar)
+for (k in 1:nVar)
+{
+  d[,k]<-as.matrix(impor[k,])-q
+}
+# T-test / P-Values
+t<-matrix(nrow=nVar,ncol=nPerm)
+pval<-matrix(nrow=nVar,ncol=1)
+for (i in 1:nVar)
+{
+  test=t.test(x=cbind(impor[i,]),y=cbind(q),alternative="greater",paired=TRUE,conf.level=0.95)
+  pval[i,1]<-test$p.value
+}
+pval<-data.frame(pval)
+pval
+as.numeric(pval<=0.05)
+sum(pval<=0.05)
+
+_______________________________________________________________________________________
+
+#con las variables del ACE yo arme mis modelos. Tambien evaluamos cada uno. 
+
+mod1=lm(Y~1, data=data )
+summary(mod1)
+par(mfrow=c(2,2))
+plot(mod1)
+mod2=lm(Y~X4, data=data )
+summary(mod2)
+par(mfrow=c(2,2))
+plot(mod2)
+mod3=lm(Y~X5, data=data )
+summary(mod3)
+par(mfrow=c(2,2))
+plot(mod3)
+mod4=lm(Y~X7, data=data )
+summary(mod4)
+par(mfrow=c(2,2))
+plot(mod4)
+mod5=lm(Y~X4+X5, data=data )
+summary(mod5)
+par(mfrow=c(2,2))
+plot(mod5)
+mod6=lm(Y~X4+X7, data=data )
+summary(mod6)
+par(mfrow=c(2,2))
+plot(mod6)
+mod7=lm(Y~X5+X7, data=data )
+summary(mod7)
+par(mfrow=c(2,2))
+plot(mod7)
+mod8=lm(Y~X4+X5+X7, data=data )
+summary(mod8)
+par(mfrow=c(2,2))
+plot(mod8)
+vif(mod8)                                           Necesito paquete "car" si el valor de vif es mayor a 10, esta malo
+mod9=lm(Y~X4*X5, data=data )
+summary(mod9)
+par(mfrow=c(2,2))
+plot(mod9)
+mod10=lm(Y~X4*X7, data=data )
+summary(mod10)
+par(mfrow=c(2,2))
+plot(mod10)
+mod11=lm(Y~X5*X7, data=data )
+summary(mod11)
+par(mfrow=c(2,2))
+plot(mod11)
+mod12=lm(Y~X5*X6*X7, data=data )
+summary(mod12)
+par(mfrow=c(2,2))
+plot(mod12)
+vif(mod12)
+
+
+
+#aqui haz una lista de tus modelos candidatos. 
+
+Cand.mod <- list()
+Cand.mod[[1]]<-mod1
+Cand.mod[[2]]<-mod3
+Cand.mod[[3]]<-mod4
+Cand.mod[[4]]<-mod5
+Cand.mod[[5]]<-mod6
+Cand.mod[[6]]<-mod7
+Cand.mod[[7]]<-mod8
+Cand.mod[[8]]<-mod9
+Cand.mod[[9]]<-mod10
+Cand.mod[[10]]<-mod11
+
+
+
+# tienes q poner los parametros de tus modelos segun estan escritos en los modelos (y en el spreadsheet)
+# y el codigo pal AIC como tal, junto al evidence ratio. 
+# El output lo analizas con el modelo q tenga el delta AICc de 0. A mayor delta AIC peor es el modelo. 
+# esta pagina tiene un buen resumen de como se calcula e interpreta: http://archimede.bibl.ulaval.ca/archimede/fichiers/21842/apa.html
+
+
+Modnames <- c("X5", "X7", "X4+X5", "X4+X7", "X5+X7", "X4+X5+X7", "X4*X5", "X4*X7", "X5*X7", "intercept only") 
+aictab(cand.set = Cand.mod, modnames = Modnames)
+evidence(aictab(cand.set = Cand.mod, modnames = Modnames))
+
+
+# cuando tengan modelos muy similares (delta AIC menor que 1 y evidece ratio menor q dos) hay q hacer el model average estimate on los parametros de los modelos 
+# candidatos (cada uno por aparte)
+# En el output te fijas en un intervalo de confianza que te da. Ese intervalo NO debe pasar por cero, si lo es tu parametro no es sig. 
+# Si no pasa por 0 (por ejemplo [-1.3, -.9] pues ese parámetro brega. Si son modelos complejos y solo una variable te sale con el intervalo q no pasa por 0 pues 
+# escojes el modelo con esa variable)
+
+modavg(Cand.mod, "X4", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list("X4*X5", "X4+X5"), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+modavg(Cand.mod, "X5", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list("X4*X5", "X5*X7"), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+modavg(Cand.mod, "X7", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list("X4*X7", "X5*X7"), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)		OSEA NECESITAS QUE LOS RESULTADOS ESTE EN EL MISMO SIGNO POSITIVOS (RELACIONADOS +) O NEGATIVOS 																RELACIONADOS -)
+
+
+#TA DAAAA!!!!! 
+#Lo q se reporta es la tabla de AIC, no la que sale del modavg.
