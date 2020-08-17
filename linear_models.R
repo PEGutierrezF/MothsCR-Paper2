@@ -56,13 +56,14 @@ gf.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
                  data = data_all, family=Gamma(link = inverse)); summary(gf.null)
 
 gf1 <- glmer(G_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gf1)  # failed to converge with inverse
+             data = data_all, family=Gamma(link = inverse)); summary(gf1)  # failed to converge with inverse
 
 gf2 <- glmer(G_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf2)  
 
 gf3 <- glmer(G_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf3)
+plot(gf3)    # para ver los residuales?
 
 gf4 <- glmer(G_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf4) 
@@ -149,7 +150,11 @@ af.null <- lmer(A_fisher ~ 1+(1|Habitat),
                 data = data_all, REML = FALSE); summary(af.null)  
 
 af1 <- lmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Habitat),
-            data = data_all, REML = FALSE); summary(af1)     # is singular ME LLEVA PUTA
+            data = data_all, REML = FALSE); summary(af1)     # is singular con el REML=FALSE
+
+ggplot(data_all, aes(x=NMDS1, y=A_fisher)) + geom_point()
+plot(af1)     # para ver los residuales?
+# El problema es que la palma me esta dividiendo mucho los datos
 
 af2 <- lmer(A_fisher ~ VegDiversity+NMDS1+(1|Habitat),
             data = data_all, REML = FALSE); summary(af2) 
@@ -158,7 +163,7 @@ af3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Habitat),
             data = data_all, REML = FALSE); summary(af3)  
 
 af4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Habitat),
-            data = data_all, REML = FALSE); summary(af4)    # is singular
+            data = data_all, REML = FALSE); summary(af4)    # is singular con REML = FALSE
 
 af5 <- lmer(A_fisher ~ VegDiversity+(1|Habitat),
             data = data_all, REML = FALSE); summary(af5)
@@ -197,49 +202,84 @@ aictab(cand.set = models, modnames = model.names)
 # But, there is another model that is very close (1 + VegDiversity+NMDS1). Need to check which is best.
 # Using glmulti, the best model was also (1 + NMDS1)
 
+# This method below is to compare between the best candidate models
+# this is called model averaging
+# https://danstich.github.io/stich/classes/BIOL678/06_modelSelection.html
+
+Cand.mod <- list()
+Cand.mod[[1]]<-af1
+Cand.mod[[2]]<-af2
+
+
+Modnames <- c("VegDiversity+NMDS1+NMDS2","VegDiversity+NMDS1") 
+aictab(cand.set = Cand.mod, modnames = Modnames)
+evidence(aictab(cand.set = Cand.mod, modnames = Modnames))
+
+confset(cand.set = Cand.mod, modnames = Modnames, second.ord = TRUE,
+        method = "raw")
+
+
+modavg(Cand.mod, "VegDiversity", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list(""), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+modavg(Cand.mod, "NMDS1", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list(""), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+modavg(Cand.mod, "NMDS2", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list(""), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
 # si la varianza de Moonlight es cerca de 0 en todos los modelos de Arctiinae, tal vez puedo
 # remover Moonlight de todos los modelos y justificarlo bien. 
-# Tal vez la Luna afecta las Arctiinae mucho menos que a las Geometridae... Revisar esto
+# Tal vez la Luna afecta las Arctiinae mucho menos que a las Geometridae... Revisar esto con estadistica!
+
+
+
 
 # Structural model -------------------------------------------------------------------------
 
 # GEOMETRIDAE structural models --------------------------------------------------------------
 
 gs.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
-                 data = data_all, family=Gamma(link = log)); summary(gs.null)
+                 data = data_all, family=Gamma(link = inverse)); summary(gs.null)
 
 gs1 <- glmer(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs1)
+             data = data_all, family=Gamma(link = log)); summary(gs1)  # does not converge with inverse
 
 gs2 <- glmer(G_fisher ~ UnderComplex + CanopyCover +(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs2)
+             data = data_all, family=Gamma(link = inverse)); summary(gs2)
 
 gs3 <- glmer(G_fisher ~ UnderComplex+VerticalComplex+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs3)
+             data = data_all, family=Gamma(link = inverse)); summary(gs3)
 
 gs4 <- glmer(G_fisher ~ CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs4)
+             data = data_all, family=Gamma(link = inverse)); summary(gs4)
 
 gs5 <- glmer(G_fisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs5) # does not converge
+             data = data_all, family=Gamma(link = inverse)); summary(gs5) # does not converge
 
 gs6 <- glmer(G_fisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs6) # does not converge
+             data = data_all, family=Gamma(link = inverse)); summary(gs6) # does not converge
 
 gs7 <- glmer(G_fisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs7)
+             data = data_all, family=Gamma(link = inverse)); summary(gs7)
 
-gs8 <- glmer(G_fisher ~ (UnderComplex * CanopyCover * VerticalComplex) +(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs8) # does not converge
+# gs8 <- glmer(G_fisher ~ (UnderComplex * CanopyCover * VerticalComplex) +(1|Moonlight)+(1|Habitat),
+#             data = data_all, family=Gamma(link = log)); summary(gs8) # does not converge
 
-gs9 <- glmer(G_fisher ~ (UnderComplex * CanopyCover) +(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs9) # does not converge
+# gs9 <- glmer(G_fisher ~ (UnderComplex * CanopyCover) +(1|Moonlight)+(1|Habitat),
+#             data = data_all, family=Gamma(link = log)); summary(gs9) # does not converge
 
-gs10 <- glmer(G_fisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
-              data = data_all, family=Gamma(link = log)); summary(gs10)
+# gs10 <- glmer(G_fisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
+#              data = data_all, family=Gamma(link = log)); summary(gs10)
 
-gs11 <- glmer(G_fisher ~ (CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
-              data = data_all, family=Gamma(link = log)); summary(gs11) # does not converge
+# gs11 <- glmer(G_fisher ~ (CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
+#              data = data_all, family=Gamma(link = log)); summary(gs11) # does not converge
 
 
 
@@ -247,58 +287,110 @@ ggplot(data_all,aes(x=Habitat,y=G_fisher)) + geom_jitter() + geom_boxplot(alpha=
 ggplot(data_all,aes(x=Moonlight,y=G_fisher)) + geom_jitter() + geom_point(alpha=0.2) 
 
 
-tab_model(gs.null,gs1,gs2,gs3,gs4,gs5,gs6,gs7,gs8,gs9,gs10,gs11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+tab_model(gs.null,gs1,gs2,gs3,gs4,gs5,gs6,gs7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+
+models <- list(gs.null,gs1,gs2,gs3,gs4,gs5,gs6,gs7)
+model.names <- c("gs.null","gs1","gs2","gs3","gs4","gs5","gs6","gs7")
+aictab(cand.set = models, modnames = model.names)
 
 # According to this, the null model has the lowest AIC
+# There is no competing model. Does this mean that the null model is the best?
 # With glmulti, the best model included (1 + UnderComplex + VerticalComplex)
 
-# ARCTIINAE
 
-as.null <- lmer(A_fisher ~ 1+(1|Moonlight)+(1|Habitat),
-                data = data_all); summary(as.null) # is Singular
+# ARCTIINAE structural models --------------------------------------------------------------
+# removed Moonlight as random effect
 
-as1 <- lmer(A_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as1)  
+as.null <- lmer(A_fisher ~ 1+(1|Habitat),
+                data = data_all, REML = FALSE); summary(as.null) 
 
-as2 <- lmer(A_fisher ~ UnderComplex + CanopyCover+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as2)  
+as1 <- lmer(A_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Habitat),
+            data = data_all, REML = FALSE); summary(as1)    # is Singular
+plot(as1)     # para ver los residuales?
 
-as3 <- lmer(A_fisher ~ UnderComplex+VerticalComplex+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as3) 
+as2 <- lmer(A_fisher ~ UnderComplex + CanopyCover+(1|Habitat),
+            data = data_all, REML = FALSE); summary(as2)  
 
-as4 <- lmer(A_fisher ~ CanopyCover + VerticalComplex+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as4) 
+as3 <- lmer(A_fisher ~ UnderComplex+VerticalComplex+(1|Habitat),
+            data = data_all, REML = FALSE); summary(as3) 
 
-as5 <- lmer(A_fisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as5)  # is Singular
+as4 <- lmer(A_fisher ~ CanopyCover + VerticalComplex+(1|Habitat),
+            data = data_all, REML = FALSE); summary(as4) 
 
-as6 <- lmer(A_fisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as6)  
+as5 <- lmer(A_fisher ~ UnderComplex+(1|Habitat),
+            data = data_all, REML = FALSE); summary(as5)  
 
-as7 <- lmer(A_fisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as7)  
+as6 <- lmer(A_fisher ~ CanopyCover+(1|Habitat),
+            data = data_all, REML = FALSE); summary(as6)  
 
-as8 <- lmer(A_fisher ~ (UnderComplex*CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as8)  # in Singular 
+as7 <- lmer(A_fisher ~ VerticalComplex+(1|Habitat),
+            data = data_all, REML = FALSE); summary(as7)  
+plot(as7)      # para ver los residuales?
 
-as9 <- lmer(A_fisher ~ (UnderComplex*CanopyCover)+(1|Moonlight)+(1|Habitat),
-            data = data_all); summary(as9)  
+# as8 <- lmer(A_fisher ~ (UnderComplex*CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
+#            data = data_all); summary(as8)  # in Singular 
 
-as10 <- lmer(A_fisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(as10) 
+# as9 <- lmer(A_fisher ~ (UnderComplex*CanopyCover)+(1|Moonlight)+(1|Habitat),
+#            data = data_all); summary(as9)  
 
-as11 <- lmer(A_fisher ~ (CanopyCover*VerticalComplex)+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(as11) 
+# as10 <- lmer(A_fisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
+#             data = data_all); summary(as10) 
+
+# as11 <- lmer(A_fisher ~ (CanopyCover*VerticalComplex)+(1|Moonlight)+(1|Habitat),
+#             data = data_all); summary(as11) 
 
 
-tab_model(as.null,as1,as2,as3,as4,as5,as6,as7,as8,as9,as10,as11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
+tab_model(as.null,as1,as2,as3,as4,as5,as6,as7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
 
 anova(a.null,a1,a2,a3,a4,a5,a6,a7)
 
-# According to this, the model that includes (1+UnderComplex*VerticalComplex) has the lowest AIC
-# With glmulti, the best model was (1+UnderComplex+VerticalComplex), but I have
-# yet to conduct interactions (*) using glmulti. 
+models <- list(as.null,as1,as2,as3,as4,as5,as6,as7)
+model.names <- c("as.null","as1","as2","as3","as4","as5","as6","as7")
+aictab(cand.set = models, modnames = model.names)
 
+# According to this, the model that includes (1+UnderComplex + CanopyCover + VerticalComplex) 
+# has the lowest AIC, but there are several competing models. I need to use model averaging.
+# With glmulti, the best model was (1+UnderComplex+VerticalComplex).
+
+
+# This method below is to compare between the best candidate models
+# this is called model averaging
+# https://danstich.github.io/stich/classes/BIOL678/06_modelSelection.html
+
+Cand.mod <- list()
+Cand.mod[[1]]<-as1
+Cand.mod[[2]]<-as4
+Cand.mod[[3]]<-as2
+Cand.mod[[4]]<-as3
+
+
+Modnames <- c("UnderComplex + CanopyCover + VerticalComplex",
+              "CanopyCover + VerticalComplex", 
+              "UnderComplex + CanopyCover",
+              "UnderComplex + VerticalComplex") 
+aictab(cand.set = Cand.mod, modnames = Modnames)
+evidence(aictab(cand.set = Cand.mod, modnames = Modnames))
+
+confset(cand.set = Cand.mod, modnames = Modnames, second.ord = TRUE,
+        method = "raw")
+
+
+modavg(Cand.mod, "UnderComplex", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list(""), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+modavg(Cand.mod, "CanopyCover", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list(""), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+modavg(Cand.mod, "VerticalComplex", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+       exclude = list(""), warn = TRUE, uncond.se = "revised",
+       parm.type = NULL)
+
+# all the variables pass by cero... None of them are significant?
 
 
 # -------------------------------------------------------------------------
