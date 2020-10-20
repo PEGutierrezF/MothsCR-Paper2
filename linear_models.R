@@ -268,28 +268,28 @@ modavg(Cand.mod, "NMDS2", modnames=Modnames, c.hat = 1, gamdisp = NULL,
 
 # GEOMETRIDAE structural models --------------------------------------------------------------
 
-gs.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
+gs.null <- glmer(G_fisher ~ 1+(1|Habitat),
                  data = data_all, family=Gamma(link = inverse)); summary(gs.null)
 
-gs1 <- glmer(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
+gs1 <- glmer(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Habitat),
              data = data_all, family=Gamma(link = log)); summary(gs1)  # does not converge with inverse
 
-gs2 <- glmer(G_fisher ~ UnderComplex + CanopyCover +(1|Moonlight)+(1|Habitat),
+gs2 <- glmer(G_fisher ~ UnderComplex + CanopyCover +(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs2)
 
-gs3 <- glmer(G_fisher ~ UnderComplex+VerticalComplex+(1|Moonlight)+(1|Habitat),
+gs3 <- glmer(G_fisher ~ UnderComplex+VerticalComplex+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs3)
 
-gs4 <- glmer(G_fisher ~ CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
+gs4 <- glmer(G_fisher ~ CanopyCover + VerticalComplex +(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs4)
 
-gs5 <- glmer(G_fisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
+gs5 <- glmer(G_fisher ~ UnderComplex+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs5) # does not converge
 
-gs6 <- glmer(G_fisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
+gs6 <- glmer(G_fisher ~ CanopyCover+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs6) # does not converge
 
-gs7 <- glmer(G_fisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
+gs7 <- glmer(G_fisher ~ VerticalComplex+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs7)
 
 # gs8 <- glmer(G_fisher ~ (UnderComplex * CanopyCover * VerticalComplex) +(1|Moonlight)+(1|Habitat),
@@ -423,41 +423,30 @@ modavg(Cand.mod, "VerticalComplex", modnames=Modnames, c.hat = 1, gamdisp = NULL
 
 # Floristic
 
-gft.null <- lmer(logGfisher ~ 1+(1|Moonlight)+(1|Habitat),
-                 data = data_all); summary(gft.null)  # is Singular
+gft.null <- lmer(logGfisher ~ 1+(1|Habitat),
+                 data = data_all, REML = FALSE); summary(gft.null)  
 
-gft1 <- lmer(logGfisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft1)  # is Singular
+gft1 <- lmer(logGfisher ~ VegDiversity+NMDS1+NMDS2+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gft1)  # is Singular
 
-gft2 <- lmer(logGfisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft2) 
+gft2 <- lmer(logGfisher ~ VegDiversity+NMDS1+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gft2) 
 
-gft3 <- lmer(logGfisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft3) 
+gft3 <- lmer(logGfisher ~ VegDiversity+NMDS2+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gft3) 
 
-gft4 <- lmer(logGfisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft4)  # is Singular
+gft4 <- lmer(logGfisher ~ NMDS1+NMDS2+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gft4)  # is Singular
 
-gft5 <- lmer(logGfisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft5)
+gft5 <- lmer(logGfisher ~ VegDiversity+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gft5)
 
-gft6 <- lmer(logGfisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft6)  # is Singular
+gft6 <- lmer(logGfisher ~ NMDS1+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gft6)  # is Singular
 
-gft7 <- lmer(logGfisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft7)  
+gft7 <- lmer(logGfisher ~ NMDS2+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gft7)  
 
-gft8 <- lmer(logGfisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft8)  
-
-gft9 <- lmer(logGfisher ~ (VegDiversity*NMDS1)+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gft9)  
-
-gft10 <- lmer(logGfisher ~ (VegDiversity*NMDS2)+(1|Moonlight)+(1|Habitat),
-              data = data_all); summary(gft10)  
-
-gft11 <- lmer(logGfisher ~ (NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
-              data = data_all); summary(gft11) 
 
 tab_model(gft.null,gft1,gft2,gft3,gft4,gft5,gft6,gft7,gft8,gft9,gft10,gft11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
 
@@ -466,41 +455,29 @@ tab_model(gft.null,gft1,gft2,gft3,gft4,gft5,gft6,gft7,gft8,gft9,gft10,gft11, sho
 
 # Structural
 
-gst.null <- lmer(logGfisher ~ 1+(1|Moonlight)+(1|Habitat),
-                 data = data_all); summary(gst.null) 
+gst.null <- lmer(logGfisher ~ 1+(1|Habitat),
+                 data = data_all, REML = FALSE); summary(gst.null) 
 
-gst1 <- lmer(logGfisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst1)  # is Singular
+gst1 <- lmer(logGfisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Habitat),
+             data = data_all, REML = FALSE); summary(gst1)  # is Singular
 
-gst2 <- lmer(logGfisher ~ UnderComplex + CanopyCover+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst2)  # is Singular
+gst2 <- lmer(logGfisher ~ UnderComplex + CanopyCover+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gst2)  
 
-gst3 <- lmer(logGfisher ~ UnderComplex+VerticalComplex+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst3)  # is Singular
+gst3 <- lmer(logGfisher ~ UnderComplex+VerticalComplex+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gst3)  
 
-gst4 <- lmer(logGfisher ~ CanopyCover + VerticalComplex+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst4) 
+gst4 <- lmer(logGfisher ~ CanopyCover + VerticalComplex+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gst4) # is Singular
 
-gst5 <- lmer(logGfisher ~ UnderComplex+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst5)  # is Singular
+gst5 <- lmer(logGfisher ~ UnderComplex+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gst5)  
 
-gst6 <- lmer(logGfisher ~ CanopyCover+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst6)  
+gst6 <- lmer(logGfisher ~ CanopyCover+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gst6)  
 
-gst7 <- lmer(logGfisher ~ VerticalComplex+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst7)  
-
-gst8 <- lmer(logGfisher ~ (UnderComplex*CanopyCover*VerticalComplex) +(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst8)  # in Singular 
-
-gst9 <- lmer(logGfisher ~ (UnderComplex*CanopyCover)+(1|Moonlight)+(1|Habitat),
-             data = data_all); summary(gst9)  # does not converge
-
-gst10 <- lmer(logGfisher ~ (UnderComplex*VerticalComplex)+(1|Moonlight)+(1|Habitat),
-              data = data_all); summary(gst10) 
-
-gst11 <- lmer(logGfisher ~ (CanopyCover*VerticalComplex)+(1|Moonlight)+(1|Habitat),
-              data = data_all); summary(gst11)  # is Singular
+gst7 <- lmer(logGfisher ~ VerticalComplex+(1|Habitat),
+             data = data_all, REML = FALSE); summary(gst7)  
 
 
 tab_model(gst.null,gst1,gst2,gst3,gst4,gst5,gst6,gst7,gst8,gst9,gst10,gst11, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
