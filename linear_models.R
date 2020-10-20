@@ -17,8 +17,6 @@ library(MASS)
 library(sjPlot)
 library(arm)
 library(AICcmodavg)
-
-install.packages("glmmTMB")
 library(glmmTMB)
 
 # loading data ------------------------------------------------------------
@@ -72,7 +70,7 @@ plot(data_all$A_fisher, as.factor(data_all$Habitat))
 
 # GEOMETRIDAE floristic models --------------------------------------------------------------
 
-gf.null <- glmer(G_fisher ~ 1+(1|Habitat),
+gf.null <- glmer(G_fisher ~ 1+(1|Habitat), 
                  data = data_all, family=Gamma(link = inverse)); summary(gf.null)
 
 gf1 <- glmer(G_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Habitat),
@@ -85,13 +83,13 @@ gf3 <- glmer(G_fisher ~ VegDiversity+NMDS2+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf3)
 
 gf4 <- glmer(G_fisher ~ NMDS1+NMDS2+(1|Habitat),
-             data = data_all, family=Gamma(link = inverse)); summary(gf4) 
+             data = data_all, family=Gamma(link = inverse)); summary(gf4) # is Singular
 
 gf5 <- glmer(G_fisher ~ VegDiversity+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf5)
 
 gf6 <- glmer(G_fisher ~ NMDS1+(1|Habitat),
-             data = data_all, family=Gamma(link = inverse)); summary(gf6) 
+             data = data_all, family=Gamma(link = inverse)); summary(gf6) # is Singular
 
 gf7 <- glmer(G_fisher ~ NMDS2+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf7)
@@ -175,6 +173,9 @@ af.null <- lmer(A_fisher ~ 1+(1|Habitat),
 af1 <- lmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Habitat),
             data = data_all, REML = FALSE); summary(af1)     # is singular con el REML=FALSE
 
+# af1a <- glmer(A_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Habitat),
+#              data = data_all, family=gaussian(link = identity)); summary(af1a)  
+
 ggplot(data_all, aes(x=NMDS1, y=A_fisher)) + geom_point()
 plot(af1)     # para ver los residuales?
 # El problema es que la palma me esta dividiendo mucho los datos
@@ -187,6 +188,9 @@ af3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Habitat),
 
 af4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Habitat),
             data = data_all, REML = FALSE); summary(af4)    # is singular con REML = FALSE
+
+# af4a <- lm(A_fisher ~ NMDS1+NMDS2, data = data_all);
+#              summary(af4a)   # as a test, here I removed Habitat as RE and changed lmer to lm
 
 af5 <- lmer(A_fisher ~ VegDiversity+(1|Habitat),
             data = data_all, REML = FALSE); summary(af5)
@@ -272,7 +276,7 @@ gs.null <- glmer(G_fisher ~ 1+(1|Habitat),
                  data = data_all, family=Gamma(link = inverse)); summary(gs.null)
 
 gs1 <- glmer(G_fisher ~ UnderComplex + CanopyCover + VerticalComplex +(1|Habitat),
-             data = data_all, family=Gamma(link = log)); summary(gs1)  # does not converge with inverse
+             data = data_all, family=Gamma(link = log)); summary(gs1)  
 
 gs2 <- glmer(G_fisher ~ UnderComplex + CanopyCover +(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs2)
@@ -284,10 +288,10 @@ gs4 <- glmer(G_fisher ~ CanopyCover + VerticalComplex +(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs4)
 
 gs5 <- glmer(G_fisher ~ UnderComplex+(1|Habitat),
-             data = data_all, family=Gamma(link = inverse)); summary(gs5) # does not converge
+             data = data_all, family=Gamma(link = inverse)); summary(gs5) 
 
 gs6 <- glmer(G_fisher ~ CanopyCover+(1|Habitat),
-             data = data_all, family=Gamma(link = inverse)); summary(gs6) # does not converge
+             data = data_all, family=Gamma(link = inverse)); summary(gs6)
 
 gs7 <- glmer(G_fisher ~ VerticalComplex+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gs7)
