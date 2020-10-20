@@ -18,6 +18,7 @@ library(corrplot)
 library(sjPlot)
 library(arm)
 
+
 # Fisher's alpha of moth data ---------------------------------------------
 
 G_matrix <- read.csv('Geo_site_matrix.csv')
@@ -38,8 +39,9 @@ plants <- read.csv("Plant_matrix.csv")
 habitat <- read.csv("Habitat.csv")
 
 set.seed(15)
-PlantsOrd <- metaMDS(plants,distance = "bray", k = 3,trymax=100)
+PlantsOrd <- metaMDS(plants,distance = "bray", k = 2,trymax=100)
 summary(PlantsOrd)
+PlantsOrd
 #Extract NMDS axis scores
 nms_axis <- scores(PlantsOrd, choices=c(1,2))
 nms_axis <- as.data.frame(nms_axis)
@@ -247,7 +249,7 @@ Arc_final <- lmer(A_fisher ~1+VegDiversity+CanopyCover+NMDS1+NMDS2+(1|Habitat), 
 # GEOMETRIDAE
 
 Geom_flor <- glmulti(G_fisher ~ VegDiversity+NMDS1+NMDS2,
-                    level=1, fitfunc=lmer.glmulti, random=c("+(1|Moonlight)","+(1|Habitat)"), 
+                    level=1, fitfunc=lmer.glmulti, random=c("(+1|Moonlight)", "+(1|Habitat)"), 
                     data=data_all, method ="h", crit = "aicc")  # is Singular (3 warnings)
 
 Geom_flor <- glmulti(G_fisher ~ VegDiversity+NMDS1+NMDS2,
@@ -364,10 +366,6 @@ Arc_str_final <- lmer(A_fisher ~ 1+UnderComplex+CanopyCover+VerticalComplex+(1|H
 
 plot(G_fisher~Moonlight, data = data_all)
 scatter.smooth(x=data_all$Moonlight, y=data_all$G_fisher)
-
-plot(G_fisher~Habitat, data = data_all)
-
-plot(G_fisher~Code, data = data_all)
 
 
 # Now I will run all models individually (without glmulti). Continued at Rscript called 'linear_models'

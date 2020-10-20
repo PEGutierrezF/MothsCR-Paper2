@@ -18,6 +18,8 @@ library(sjPlot)
 library(arm)
 library(AICcmodavg)
 
+install.packages("glmmTMB")
+library(glmmTMB)
 
 # loading data ------------------------------------------------------------
 
@@ -46,35 +48,52 @@ data_all$CanopyCover = rescale(data_all$CanopyCover)
 data_all$VerticalComplex = rescale(data_all$VerticalComplex)
 
 
+# Checking random effects -------------------------------------------------
+
+# Moonlight
+plot(data_all$G_fisher, data_all$Moonlight)
+plot(data_all$A_fisher, data_all$Moonlight)
+
+cor.test(data_all$G_fisher, data_all$Moonlight, method=c("spearman"))
+cor.test(data_all$A_fisher, data_all$Moonlight, method=c("pearson"))
+
+# Moonlight is not significantly affecting moth diversity, so it will no longer be included
+# as a random effect in any of the models.
+
+# Habitat
+plot(data_all$G_fisher, as.factor(data_all$Habitat))
+plot(data_all$A_fisher, as.factor(data_all$Habitat))
+
+
+
 # Individual models (without glmulti) -------------------------------------------------------
 
 # Floristic models ------------------------------------------------------------------------
 
 # GEOMETRIDAE floristic models --------------------------------------------------------------
 
-gf.null <- glmer(G_fisher ~ 1+(1|Moonlight)+(1|Habitat),
+gf.null <- glmer(G_fisher ~ 1+(1|Habitat),
                  data = data_all, family=Gamma(link = inverse)); summary(gf.null)
 
-gf1 <- glmer(G_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
-             data = data_all, family=Gamma(link = inverse)); summary(gf1)  # failed to converge with inverse
+gf1 <- glmer(G_fisher ~ VegDiversity+NMDS1+NMDS2+(1|Habitat),
+             data = data_all, family=Gamma(link = inverse)); summary(gf1)  
 
-gf2 <- glmer(G_fisher ~ VegDiversity+NMDS1+(1|Moonlight)+(1|Habitat),
+gf2 <- glmer(G_fisher ~ VegDiversity+NMDS1+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf2)  
 
-gf3 <- glmer(G_fisher ~ VegDiversity+NMDS2+(1|Moonlight)+(1|Habitat),
+gf3 <- glmer(G_fisher ~ VegDiversity+NMDS2+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf3)
-plot(gf3)    # para ver los residuales?
 
-gf4 <- glmer(G_fisher ~ NMDS1+NMDS2+(1|Moonlight)+(1|Habitat),
+gf4 <- glmer(G_fisher ~ NMDS1+NMDS2+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf4) 
 
-gf5 <- glmer(G_fisher ~ VegDiversity+(1|Moonlight)+(1|Habitat),
+gf5 <- glmer(G_fisher ~ VegDiversity+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf5)
 
-gf6 <- glmer(G_fisher ~ NMDS1+(1|Moonlight)+(1|Habitat),
+gf6 <- glmer(G_fisher ~ NMDS1+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf6) 
 
-gf7 <- glmer(G_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
+gf7 <- glmer(G_fisher ~ NMDS2+(1|Habitat),
              data = data_all, family=Gamma(link = inverse)); summary(gf7)
 
 # gf8 <- glmer(G_fisher ~ (VegDiversity*NMDS1*NMDS2)+(1|Moonlight)+(1|Habitat),
@@ -91,7 +110,11 @@ gf7 <- glmer(G_fisher ~ NMDS2+(1|Moonlight)+(1|Habitat),
 
 ggplot(data_all,aes(x=Habitat,y=G_fisher)) + geom_jitter() + geom_boxplot(alpha=0.2) 
 ggplot(data_all,aes(x=Moonlight,y=G_fisher)) + geom_jitter() + geom_point(alpha=0.2) 
+        
 
+ggplot(data_all,aes(x=VegDiversity,y=G_fisher)) + geom_jitter() + 
+        geom_point(alpha=0.2) + geom_smooth(method = "lm")
+plot(gf5)    # para ver los residuales?
 
 tab_model(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7, show.aic = TRUE, show.aicc = TRUE, show.fstat = TRUE)
 
@@ -103,9 +126,9 @@ models <- list(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7)
 model.names <- c("gf.null","gf1","gf2","gf3","gf4","gf5","gf6","gf7")
 aictab(cand.set = models, modnames = model.names)
 
-# According to tab_model and aictab, the model that includes (1+VegDiversity+NMDS2) has the 
-# lowest AIC, but there is another model that is close (1+VegDiversity) with a deltaAIC<2... 
-# Need to compare with another method gf3 vs gf5 (e.g. model averaging)
+# According to tab_model and aictab, the model that includes (1+VegDiversity) has the 
+# lowest AIC, but the null model is very close with a deltaAIC<2... 
+# Need to compare with another method null vs gf5 (e.g. model averaging), or just mention both
 # Using glmulti, the best model was (1 + NMDS1 + NMDS2)
 
 
@@ -113,28 +136,28 @@ aictab(cand.set = models, modnames = model.names)
 # this is called model averaging
 # https://danstich.github.io/stich/classes/BIOL678/06_modelSelection.html
 
-Cand.mod <- list()
-Cand.mod[[1]]<-gf3
-Cand.mod[[2]]<-gf5
-
-
-Modnames <- c("VegDiversity+NMDS2","VegDiversity") 
-aictab(cand.set = Cand.mod, modnames = Modnames)
-evidence(aictab(cand.set = Cand.mod, modnames = Modnames))
-
-confset(cand.set = Cand.mod, modnames = Modnames, second.ord = TRUE,
-        method = "raw")
-
-
-modavg(Cand.mod, "VegDiversity", modnames=Modnames, c.hat = 1, gamdisp = NULL,
-       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
-       exclude = list("VegDiversity+NMDS2"), warn = TRUE, uncond.se = "revised",
-       parm.type = NULL)
-
-modavg(Cand.mod, "NMDS2", modnames=Modnames, c.hat = 1, gamdisp = NULL,
-       conf.level = 0.95, second.ord = TRUE, nobs = NULL,
-       exclude = list(""), warn = TRUE, uncond.se = "revised",
-       parm.type = NULL)
+# Cand.mod <- list()
+# Cand.mod[[1]]<-gf3
+# Cand.mod[[2]]<-gf5
+# 
+# 
+# Modnames <- c("VegDiversity+NMDS2","VegDiversity") 
+# aictab(cand.set = Cand.mod, modnames = Modnames)
+# evidence(aictab(cand.set = Cand.mod, modnames = Modnames))
+# 
+# confset(cand.set = Cand.mod, modnames = Modnames, second.ord = TRUE,
+#         method = "raw")
+# 
+# 
+# modavg(Cand.mod, "VegDiversity", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+#        conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+#        exclude = list("VegDiversity+NMDS2"), warn = TRUE, uncond.se = "revised",
+#        parm.type = NULL)
+# 
+# modavg(Cand.mod, "NMDS2", modnames=Modnames, c.hat = 1, gamdisp = NULL,
+#        conf.level = 0.95, second.ord = TRUE, nobs = NULL,
+#        exclude = list(""), warn = TRUE, uncond.se = "revised",
+#        parm.type = NULL)
 
 # From these results, it seems that NMDS2 is not significant (CI passes by 0)
 # This might mean that NMDS2 should not be included at all, in which case the 
