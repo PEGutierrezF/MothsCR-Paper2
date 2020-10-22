@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------
-# Linear models for CR moth paper 2 
+# Linear models for CR moth paper 2  (Fisher's a as response variable)
 # 13 Aug 2020
 # AAR
 # -------------------------------------------------------------------------------
@@ -189,8 +189,7 @@ af3 <- lmer(A_fisher ~ VegDiversity+NMDS2+(1|Habitat),
 af4 <- lmer(A_fisher ~ NMDS1+NMDS2+(1|Habitat),
             data = data_all, REML = FALSE); summary(af4)    # is singular con REML = FALSE
 
-# af4a <- lm(A_fisher ~ NMDS1+NMDS2, data = data_all);
-#              summary(af4a)   # as a test, here I removed Habitat as RE and changed lmer to lm
+# af4a <- lm(A_fisher ~ NMDS1+NMDS2, data = data_all); summary(af4a)   # as a test, here I removed Habitat as RE and changed lmer to lm
 
 af5 <- lmer(A_fisher ~ VegDiversity+(1|Habitat),
             data = data_all, REML = FALSE); summary(af5)
