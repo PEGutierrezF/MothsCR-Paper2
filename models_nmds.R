@@ -29,10 +29,24 @@ gmatrix <- read.csv("Geo_full_matrix.csv")
 code <- read.csv("Geo_NMDScode.csv")
 
 set.seed(15)
-GeoOrd <- metaMDS(gmatrix,distance = "bray", k = 2,trymax=100)
+GeoOrd <- metaMDS(gmatrix,distance = "bray", k = 2,trymax=500)
 summary(GeoOrd)
 GeoOrd
 #Extract NMDS axis scores
 nms_axis <- scores(PlantsOrd, choices=c(1,2))
 nms_axis <- as.data.frame(nms_axis)
+
+
+# Arctiinae NMDS --------------------------------------------------------
+
+# Extracting the NMDS axis coordinates for the Arctiinae species matrix,
+# to be used as response variable
+
+amatrix <- read.csv("Arc_full_matrix.csv")
+code <- read.csv("Arc_NMDScode.csv")
+
+set.seed(15)
+ArcOrd <- metaMDS(amatrix,distance = "bray", k = 2,trymax=500)
+summary(ArcOrd)
+ArcOrd
 
