@@ -17,7 +17,7 @@ library(fitdistrplus)
 library(corrplot)
 library(sjPlot)
 library(arm)
-
+jj
 
 # Fisher's alpha of moth data ---------------------------------------------
 
