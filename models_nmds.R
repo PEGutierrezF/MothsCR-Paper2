@@ -29,7 +29,7 @@ gmatrix <- read.csv("Geo_full_matrix.csv")
 code <- read.csv("Geo_NMDScode.csv")
 
 set.seed(15)
-GeoOrd <- metaMDS(gmatrix,distance = "bray", k = 2,trymax=500)
+GeoOrd <- metaMDS(gmatrix,distance = "bray", k = 2,trymax=999)
 summary(GeoOrd)
 GeoOrd
 #Extract NMDS axis scores
