@@ -1,0 +1,59 @@
+
+
+
+
+# ---------------------------------------------
+# New Analysis: 24 de Junio 2022
+# 24 Jun 2022
+# Pablo E. Gutiérrez-Fonseca
+# pabloe.gutierrezfonseca@gmail.com
+# ---------------------------------------------
+#  
+
+
+# Loading libraries -------------------------------------------------------
+
+library(vegan)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(glmulti)
+library(MASS)
+library(fitdistrplus)
+library(corrplot)
+library(sjPlot)
+library(arm)
+
+# Fisher's alpha of moth data ---------------------------------------------
+
+G_matrix <- read.csv('Geo_site_matrix.csv')
+G_fisher <- fisher.alpha(G_matrix) 
+G_fisher <- as.data.frame(G_fisher)
+
+A_matrix <- read.csv('Arc_site_matrix.csv')
+A_fisher <- fisher.alpha(A_matrix) 
+A_fisher <- as.data.frame(A_fisher)
+
+
+# NMDS of plant data ------------------------------------------------------
+
+# Extracting the NMDS axis coordinates for the plant species matrix,
+# to be used as proxy for plant species composition
+
+plants <- read.csv("Plant_matrix.csv")
+habitat <- read.csv("Habitat.csv")
+
+set.seed(15)
+PlantsOrd <- metaMDS(plants, distance = "bray", k = 2, trymax=100)
+summary(PlantsOrd)
+PlantsOrd
+plot(PlantsOrd)
+
+#Extract NMDS axis scores
+nms_axis <- as.data.frame(scores(PlantsOrd, 'sites'))  # Pablo 24 de Junio
+
+
+# Creating data frame with all variables ----------------------------------
+
+covar <- read.csv("covar.csv")
+data_all <- cbind(covar, nms_axis, G_fisher, A_fisher)
