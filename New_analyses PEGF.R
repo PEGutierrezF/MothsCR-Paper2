@@ -57,3 +57,14 @@ nms_axis <- as.data.frame(scores(PlantsOrd, 'sites'))  # Pablo 24 de Junio
 
 covar <- read.csv("covar.csv")
 data_all <- cbind(covar, nms_axis, G_fisher, A_fisher)
+
+
+# Checking distribution of data -------------------------------------------
+
+shapiro.test(data_all$G_fisher) # not normal
+shapiro.test(data_all$A_fisher) # normal
+
+# transform G_fisher
+data_all$logGfisher <- log(data_all$G_fisher)
+shapiro.test(data_all$logGfisher)
+descdist(data_all$logGfisher, discrete=FALSE, boot=500) 

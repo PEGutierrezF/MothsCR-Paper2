@@ -44,7 +44,6 @@ PlantsOrd
 #Extract NMDS axis scores
 nms_axis <- scores(PlantsOrd, choices=c(1,2))
 nms_axis <- as.data.frame(nms_axis)
-nms_axis <- do.call(rbind.data.frame, nms_axis) # Pablo 24 Junio 2022
 
 
 # Creating data frame with all variables ----------------------------------
