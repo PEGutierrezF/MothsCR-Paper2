@@ -47,11 +47,12 @@ set.seed(15)
 PlantsOrd <- metaMDS(plants, distance = "bray", k = 2, trymax=100)
 summary(PlantsOrd)
 PlantsOrd
+
+par(mfrow=c(1,1))
 plot(PlantsOrd)
 
 #Extract NMDS axis scores
 nms_axis <- as.data.frame(scores(PlantsOrd, 'sites'))  # Pablo 24 de Junio
-
 
 # Creating data frame with all variables ----------------------------------
 covar <- read.csv("covar.csv")
@@ -70,4 +71,45 @@ descdist(data_all$A_fisher, discrete=FALSE, boot=500) # UNIFORM
 plot(data_all$G_fisher, as.factor(data_all$Habitat))
 plot(data_all$A_fisher, as.factor(data_all$Habitat))
 
+
+
+# Before GLM, scaled variables
+
+# non-correlated floristic variables: Vegetation Diversity, NMDS 1 and NMDS 2
+# non-correlated structural variables: Understory complexity, vertical complexity and canopy cover
+
+# First, let's rescale the predictor variables, so they are all in the same scale
+data_all$VegDiversity = rescale(data_all$VegDiversity)
+data_all$NMDS1 = rescale(data_all$NMDS1)
+data_all$NMDS2 = rescale(data_all$NMDS2)
+data_all$UnderComplex = rescale(data_all$UnderComplex)
+data_all$CanopyCover = rescale(data_all$CanopyCover)
+data_all$VerticalComplex = rescale(data_all$VerticalComplex)
+
+
+# GEOMETRIDAE Floristic models --------------------------------------------
+
+gf.null <- glmer(G_fisher ~ 1 + (1|Habitat), 
+                 data = data_all, family=Gamma)
+
+gf1 <- glmer(G_fisher ~ VegDiversity + NMDS1 + NMDS2 + (1|Habitat),
+             data = data_all, family=Gamma)
+
+gf2 <- glmer(G_fisher ~ VegDiversity + NMDS1 + (1|Habitat),
+             data = data_all, family=Gamma)  
+
+gf3 <- glmer(G_fisher ~ VegDiversity + NMDS2 + (1|Habitat),
+             data = data_all, family=Gamma)
+
+gf4 <- glmer(G_fisher ~ NMDS1 + NMDS2 +(1|Habitat),
+             data = data_all, family=Gamma) # is Singular
+
+gf5 <- glmer(G_fisher ~ VegDiversity + (1|Habitat),
+             data = data_all, family=Gamma)
+
+gf6 <- glmer(G_fisher ~ NMDS1 + (1|Habitat),
+             data = data_all, family=Gamma) # is Singular
+
+gf7 <- glmer(G_fisher ~ NMDS2 + (1|Habitat),
+             data = data_all, family=Gamma)
 

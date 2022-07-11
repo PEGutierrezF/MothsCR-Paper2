@@ -15,3 +15,9 @@ It appears they advise the fitting of a generalized linear model (GLM) with log 
 
 https://stats.stackexchange.com/questions/47840/linear-model-with-log-transformed-response-vs-generalized-linear-model-with-log
 
+
+### Singular models: random effect variances estimated as zero, or correlations estimated as +/- 1
+
+This commonly occurs in two scenarios:
+
+small numbers of random-effect levels (e.g. <5), as illustrated in these simulations and discussed (in a somewhat different, Bayesian context) by Gelman (2006).
