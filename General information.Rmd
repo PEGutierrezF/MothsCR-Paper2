@@ -1,0 +1,17 @@
+---
+title: "General information"
+author: "Pablo E. Gutiérrez-Fonseca"
+date: '2022-07-11'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+
+### Linear model with log-transformed response vs. generalized linear model with log link
+
+It appears they advise the fitting of a generalized linear model (GLM) with log link instead of a linear model (LM) with log-transformed response.
+
+https://stats.stackexchange.com/questions/47840/linear-model-with-log-transformed-response-vs-generalized-linear-model-with-log
+

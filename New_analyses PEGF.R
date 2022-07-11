@@ -54,17 +54,20 @@ nms_axis <- as.data.frame(scores(PlantsOrd, 'sites'))  # Pablo 24 de Junio
 
 
 # Creating data frame with all variables ----------------------------------
-
 covar <- read.csv("covar.csv")
 data_all <- cbind(covar, nms_axis, G_fisher, A_fisher)
 
 
-# Checking distribution of data -------------------------------------------
+# Response variables ------------------------------------------------------
 
 shapiro.test(data_all$G_fisher) # not normal
 shapiro.test(data_all$A_fisher) # normal
 
-# transform G_fisher
-data_all$logGfisher <- log(data_all$G_fisher)
-shapiro.test(data_all$logGfisher)
-descdist(data_all$logGfisher, discrete=FALSE, boot=500) 
+par(mfrow=c(2,2))
+descdist(data_all$G_fisher, discrete=FALSE, boot=500) # GAMMA
+descdist(data_all$A_fisher, discrete=FALSE, boot=500) # UNIFORM
+
+plot(data_all$G_fisher, as.factor(data_all$Habitat))
+plot(data_all$A_fisher, as.factor(data_all$Habitat))
+
+
