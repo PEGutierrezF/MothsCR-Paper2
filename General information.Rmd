@@ -18,6 +18,40 @@ https://stats.stackexchange.com/questions/47840/linear-model-with-log-transforme
 
 ### Singular models: random effect variances estimated as zero, or correlations estimated as +/- 1
 
+Singular fit (variances of one or more effects are zero, or close to zero)
+
+
+This means that some "dimensions" of the variance-covariance matrix have been estimated as exactly zero.
+
+Singularity is relatively easy to detect because it leads to random-effect variance estimates of (nearly) zero, or estimates of correlations that are (almost) exactly -1 or 1.
+
+Reference:  https://rdrr.io/cran/lme4/man/isSingular.html
+
+
+
 This commonly occurs in two scenarios:
 
 small numbers of random-effect levels (e.g. <5), as illustrated in these simulations and discussed (in a somewhat different, Bayesian context) by Gelman (2006).
+
+You do not need a model like this.
+
+The takehome message is, there's no really systematic effect coming from PLANT, so you don't need to specify a highly complicated model, do something like: 
+
+Reference:  https://stackoverflow.com/questions/60028673/lme4-error-boundary-singular-fit-see-issingular
+
+
+## Detect singularities:
+
+ranef(gf4)
+
+isSingular(gf4, tol = 1e-4)
+
+
+References:  https://cran.r-project.org/web/packages/lme4/lme4.pdf
+
+
+### Model Selection 
+
+A finite-size correction for AIC does exist (AICc) – but it was developed in the context of linear models. As far as I know its adequacy in the GLMM case has not been established. 
+
+Reference:  http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#model-selection-and-averaging
