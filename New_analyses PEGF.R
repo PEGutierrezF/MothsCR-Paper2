@@ -110,6 +110,7 @@ isSingular(gf4, tol = 1e-4)
 gf5 <- glmer(G_fisher ~ VegDiversity + (1|Habitat),
              data = data_all, family=Gamma)
 isSingular(gf5, tol = 1e-4)
+summary(gf5)
 
 gf6 <- glmer(G_fisher ~ NMDS1 + (1|Habitat),
              data = data_all, family=Gamma) # is Singular
@@ -119,5 +120,5 @@ gf7 <- glmer(G_fisher ~ NMDS2 + (1|Habitat),
              data = data_all, family=Gamma)
 
 anova(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7,test="F")
-AIC(gf1,gf2,gf5)
+bbmle::AICctab(gf1,gf2,gf5, base = T,weights = T)
 bbmle::AICctab(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7, base = T,weights = T)
