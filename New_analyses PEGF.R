@@ -12,7 +12,7 @@
 
 
 # Loading libraries -------------------------------------------------------
-
+install.packages('lsmeans')
 library(vegan)
 library(ggplot2)
 library(lme4)
@@ -24,6 +24,7 @@ library(corrplot)
 library(sjPlot)
 library(arm)
 library(bbmle)
+library(lsmeans)
 
 # Fisher's alpha of moth data ---------------------------------------------
 
@@ -107,6 +108,7 @@ gf4 <- glmer(G_fisher ~ NMDS1 + NMDS2 +(1|Habitat),
 ranef(gf4)
 isSingular(gf4, tol = 1e-4)
 
+# Best model
 gf5 <- glmer(G_fisher ~ VegDiversity + (1|Habitat),
              data = data_all, family=Gamma)
 isSingular(gf5, tol = 1e-4)
@@ -117,8 +119,10 @@ gf6 <- glmer(G_fisher ~ NMDS1 + (1|Habitat),
 ranef(gf6)
 
 gf7 <- glmer(G_fisher ~ NMDS2 + (1|Habitat),
-             data = data_all, family=Gamma)
+             data = data_all, family=Gamma(link = inverse))
 
 anova(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7,test="F")
-bbmle::AICctab(gf1,gf2,gf5, base = T,weights = T)
-bbmle::AICctab(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7, base = T,weights = T)
+bbmle::AICctab(gf1,gf2,gf5, 
+               base = T, weights = T)
+bbmle::AICctab(gf.null,gf1,gf2,gf3,gf4,gf5,gf6,gf7, 
+               base = T,weights = T)
